@@ -1,0 +1,472 @@
+<template>
+  <div class="h-screen flex flex-col bg-gray-50 overflow-hidden font-sans" dir="rtl">
+    <!-- Top Navigation -->
+    <header class="bg-white shadow-sm z-20 flex-shrink-0 h-16 flex justify-between items-center px-6">
+      <div class="flex items-center gap-3">
+        <!-- <img src="/logo-icon.png" class="h-8 opacity-80" /> -->
+        <div>
+           <h1 class="font-bold text-primary text-lg leading-tight">منصة حجاج</h1>
+           <p class="text-[10px] text-gray-500">لوحة التحكم المركزية</p>
+        </div>
+      </div>
+      
+      <!-- Global Stats Ticker -->
+      <div class="hidden md:flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+          <div class="flex items-center gap-2">
+             <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+             <span class="text-xs text-gray-400">إجمالي الحجاج</span>
+             <span class="font-bold text-gray-700 font-mono text-lg">{{ qureaStationStatus?.quota?.toLocaleString() || 0 }}</span>
+          </div>
+          <div class="w-px h-4 bg-gray-300"></div>
+          <div class="text-xs text-secondary font-bold">{{ currentTime }}</div>
+      </div>
+
+      <button @click="handleLogout" class="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+        </svg>
+      </button>
+    </header>
+
+    <div class="flex flex-grow overflow-hidden">
+      
+      <!-- Sidebar: Office List -->
+      <aside class="w-80 bg-white border-l border-gray-200 flex flex-col z-10 flex-shrink-0">
+        <!-- Sidebar Header: Filters -->
+        <div class="p-4 border-b border-gray-100 space-y-3 bg-gray-50/50">
+           <!-- Coordination Select -->
+           <div class="relative">
+              <select v-model="selectedCoordinationId" class="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer">
+                 <option :value="null">كل التنسيقيات</option>
+                 <option v-for="coord in coordinations" :key="coord.id" :value="coord.id">
+                    {{ coord.name }}
+                 </option>
+              </select>
+              <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" /></svg>
+              </div>
+           </div>
+
+           <!-- Search Input -->
+           <div class="relative">
+              <input 
+                v-model="searchQuery" 
+                type="text" 
+                placeholder="بحث عن مكتب..." 
+                class="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-secondary/20 focus:border-secondary outline-none transition-all"
+              />
+              <div class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              </div>
+           </div>
+        </div>
+
+        <!-- Pagination / Count for Sidebar -->
+        <div class="px-4 py-2 bg-gray-50 text-[10px] text-gray-400 flex justify-between items-center border-b border-gray-100">
+            <span>عدد المكاتب: {{ filteredOffices.length }}</span>
+        </div>
+
+        <!-- List -->
+        <div class="flex-grow overflow-y-auto overflow-x-hidden custom-scrollbar p-2 space-y-1">
+           <div v-for="office in filteredOffices" :key="office.id" 
+                @click="selectOffice(office)"
+                class="p-3 rounded-lg cursor-pointer transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm group relative"
+                :class="selectedOffice?.id === office.id ? 'bg-[#D8A663]/10 border-[#D8A663]/30' : 'bg-white hover:bg-gray-50'"
+           >
+              <!-- Selection Indicator -->
+              <div v-if="selectedOffice?.id === office.id" class="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-[#D8A663] rounded-l-full"></div>
+
+              <div class="flex justify-between items-start mb-1 px-1">
+                 <h4 class="text-sm font-bold text-gray-800 line-clamp-1 group-hover:text-primary transition-colors">{{ office.name }}</h4>
+                 <div class="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" :class="getStatusColor(office.status)"></div>
+              </div>
+              
+              <div class="flex justify-between items-center text-[11px] text-gray-500 px-1">
+                 <span class="opacity-70">{{ getStatusText(office.status) }}</span>
+                 <div class="flex gap-1 items-center bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
+                    <span>{{ office.quota }}</span>
+                 </div>
+              </div>
+           </div>
+           
+           <div v-if="filteredOffices.length === 0" class="p-8 text-center text-gray-400 text-sm">
+             لا توجد مكاتب مطابقة
+           </div>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="flex-grow flex flex-col bg-gray-50 overflow-hidden relative">
+        
+        <!-- Welcome State -->
+        <div v-if="!selectedOffice" class="absolute inset-0 flex flex-col items-center justify-center text-gray-300 p-8 text-center animate-in fade-in duration-700">
+            <svg class="w-32 h-32 mb-6 opacity-20" fill="currentColor" viewBox="0 0 24 24"><path d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9c-1.65 0-3-1.35-3-3s1.35-3 3-3 3 1.35 3 3-1.35 3-3 3zm0-4c-.55 0-1 .45-1 1s.45 1 1 1 1-.45 1-1-.45-1-1-1zm6 10H6v-1.53c0-2.5 3.97-3.58 6-3.58s6 1.08 6 3.58V18zm-9.69-2h7.38c-.69-.56-2.38-1.12-3.69-1.12s-3.01.56-3.69 1.12z"/></svg>
+            <h2 class="text-2xl font-bold text-gray-400 mb-2">مرحباً بك في منصة القرعة</h2>
+            <p class="max-w-md">الرجاء اختيار مكتب من القائمة الجانبية لعرض التفاصيل وإجراء القرعة</p>
+        </div>
+
+        <!-- Selected Office Detail -->
+        <div v-else class="flex flex-col h-full animate-in slide-up duration-300">
+           
+           <!-- Office Header -->
+           <div class="bg-white p-6 border-b border-gray-200 flex justify-between items-start shadow-sm z-10">
+              <div>
+                  <div class="flex items-center gap-3 mb-2">
+                     <h2 class="text-2xl font-bold text-gray-800">{{ selectedOffice.name }}</h2>
+                     <span class="px-2.5 py-0.5 rounded-full text-xs font-bold ring-1 ring-inset" 
+                           :class="getStatusBadgeClass(selectedOffice.status)">
+                        {{ getStatusText(selectedOffice.status) }}
+                     </span>
+                  </div>
+                  <div class="flex gap-6 text-sm text-gray-500">
+                      <div class="flex items-center gap-1.5">
+                          <span class="font-medium text-gray-700">كود المكتب:</span>
+                          <span class="font-mono text-gray-600 bg-gray-100 px-1.5 rounded">{{ selectedOffice.id }}</span>
+                      </div>
+                      <div class="flex items-center gap-1.5">
+                          <span class="font-medium text-gray-700">الحصة:</span>
+                          <span>{{ selectedOffice.quota }} حاج</span>
+                      </div>
+                      <div class="flex items-center gap-1.5" v-if="selectedOffice.coordination">
+                          <span class="font-medium text-gray-700">التنسيقية:</span>
+                          <span>{{ selectedOffice.coordination.name }}</span>
+                      </div>
+                  </div>
+              </div>
+
+              <!-- Primary Action -->
+              <div>
+                  <button 
+                    v-if="selectedOffice.status === 1"
+                    @click="handleStartQurea"
+                    :disabled="processing"
+                    class="bg-[#D8A663] text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#c29558] flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                     <span v-if="processing" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
+                     <span>{{ processing ? 'جاري السحب...' : 'بدأ القرعة' }}</span>
+                     <svg v-if="!processing" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                  </button>
+                  <div v-else-if="selectedOffice.status === 3" class="bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200 font-bold flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
+                      <span>تمت القرعة بنجاح</span>
+                  </div>
+              </div>
+           </div>
+
+           <!-- Tabs -->
+           <div class="bg-white px-6 border-b border-gray-200 flex gap-6">
+              <button 
+                @click="activeTab = 'registers'"
+                class="py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2"
+                :class="activeTab === 'registers' ? 'border-secondary text-secondary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+              >
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" /></svg>
+                 سجل المتقدمين
+              </button>
+              <button 
+                @click="activeTab = 'winners'"
+                class="py-3 text-sm font-medium border-b-2 transition-colors flex items-center gap-2"
+                :class="activeTab === 'winners' ? 'border-primary text-primary' : 'border-transparent text-gray-500 hover:text-gray-700'"
+              >
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" /></svg>
+                 الفائزين بالقرعة
+                 <span v-if="winners.length" class="bg-primary/10 text-primary text-[10px] px-1.5 py-0.5 rounded-full">{{ winners.length }}</span>
+              </button>
+           </div>
+
+           <!-- Tab Content Area -->
+           <div class="flex-grow overflow-auto bg-gray-50 p-6 relative">
+             
+             <!-- Tab: Registers -->
+             <div v-if="activeTab === 'registers'" class="space-y-4">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-sm text-right">
+                            <thead class="bg-gray-50 text-gray-500 border-b border-gray-200 font-medium">
+                                <tr>
+                                    <th class="px-6 py-3">رقم الاشتراك</th>
+                                    <th class="px-6 py-3">الاسم الثلاثي</th>
+                                    <th class="px-6 py-3">الرقم الوطني</th>
+                                    <th class="px-6 py-3">رقم الهاتف</th>
+                                    <th class="px-6 py-3">تاريخ التسجيل</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-gray-100">
+                                <tr v-for="reg in registers" :key="reg.id" class="hover:bg-gray-50/50">
+                                    <td class="px-6 py-3 font-mono text-gray-600">{{ reg.id || '#' }}</td>
+                                    <td class="px-6 py-3 font-bold text-gray-700">{{ reg.name || 'غير متوفر' }}</td>
+                                    <td class="px-6 py-3 font-mono">{{ reg.nationalId || '-' }}</td>
+                                    <td class="px-6 py-3 font-mono text-gray-500">{{ reg.phoneNumber || '-' }}</td>
+                                    <td class="px-6 py-3 text-gray-400">{{ formatDate(reg.createDate) }}</td>
+                                </tr>
+                                <tr v-if="registers.length === 0 && !loadingRegisters">
+                                    <td colspan="5" class="px-6 py-8 text-center text-gray-400">لا يوجد متقدمين في هذا المكتب</td>
+                                </tr>
+                                <tr v-if="loadingRegisters">
+                                    <td colspan="5" class="px-6 py-8 text-center text-gray-400 animate-pulse">جاري تحميل البيانات...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Pagination -->
+                <div class="flex justify-center items-center gap-4 text-sm" v-if="registers.length > 0">
+                    <button @click="changePage(currentPage - 1)" :disabled="currentPage <= 1" class="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50">السابق</button>
+                    <span class="text-gray-600">صفحة {{ currentPage }}</span>
+                    <button @click="changePage(currentPage + 1)" :disabled="registers.length < pageSize" class="px-3 py-1 rounded border border-gray-300 bg-white hover:bg-gray-50 disabled:opacity-50">التالي</button>
+                </div>
+             </div>
+
+             <!-- Tab: Winners -->
+             <div v-if="activeTab === 'winners'">
+                <div v-if="selectedOffice.status !== 3" class="flex flex-col items-center justify-center p-12 text-center h-full">
+                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4 text-gray-400">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    </div>
+                    <h3 class="text-lg font-bold text-gray-600">القرعة لم تتم بعد</h3>
+                    <p class="text-gray-400 mt-2">عليك بدء القرعة أولاً لإظهار الفائزين</p>
+                    <button v-if="selectedOffice.status === 1" @click="handleStartQurea" class="mt-6 text-primary underline hover:text-green-700">بدأ القرعة الآن</button>
+                </div>
+
+                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div v-for="(winner, idx) in winners" :key="idx" 
+                         class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm border-l-4 border-l-[#D8A663] hover:shadow-md transition-shadow">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h4 class="font-bold text-gray-800 text-lg mb-1">{{ winner.name }}</h4>
+                                <div class="space-y-1 text-sm text-gray-500">
+                                    <p class="flex items-center gap-2"><span class="text-xs text-gray-400">الرقم الوطني:</span> <span class="font-mono">{{ winner.nationalId }}</span></p>
+                                    <p class="flex items-center gap-2"><span class="text-xs text-gray-400">رقم التسجيل:</span> <span class="font-mono">{{ winner.regId || '-' }}</span></p>
+                                </div>
+                            </div>
+                            <span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded font-bold">
+                                {{ idx % 2 === 0 ? 'حاج' : 'مرافق' }} <!-- Mock logic for label, replace with data if available -->
+                            </span>
+                        </div>
+                    </div>
+                    <div v-if="winners.length === 0" class="col-span-full p-8 text-center text-gray-400">
+                        جاري جلب الفائزين...
+                    </div>
+                </div>
+             </div>
+
+           </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, computed, onMounted, watch } from 'vue';
+import api from '../services/api';
+import { logout } from '../services/auth';
+
+// --- State ---
+const currentTime = ref('');
+const coordinations = ref([]);
+const offices = ref([]);
+const qureaStationStatus = ref({ quota: 0 });
+
+const selectedCoordinationId = ref(null);
+const searchQuery = ref('');
+const selectedOffice = ref(null);
+
+const activeTab = ref('registers'); // 'registers' | 'winners'
+
+// Registers Pagination
+const registers = ref([]);
+const loadingRegisters = ref(false);
+const currentPage = ref(1);
+const pageSize = ref(20);
+
+// Winners
+const winners = ref([]);
+const loadingWinners = ref(false);
+
+const processing = ref(false);
+
+// --- Computed ---
+const filteredOffices = computed(() => {
+    return offices.value.filter(office => {
+        const matchesCoord = selectedCoordinationId.value ? office.coordinationId === selectedCoordinationId.value : true;
+        const matchesSearch = searchQuery.value ? office.name.toLowerCase().includes(searchQuery.value.toLowerCase()) : true;
+        return matchesCoord && matchesSearch;
+    });
+});
+
+// --- Formatting ---
+const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    return new Date(dateStr).toLocaleDateString('ar-LY');
+}
+
+// --- Status Helpers ---
+const getStatusText = (status) => {
+    switch(status) {
+        case 1: return 'في الانتظار';
+        case 2: return 'قيد الإجراء';
+        case 3: return 'منتهي';
+        case 4: return 'ملغي';
+        default: return 'غير محدد';
+    }
+};
+
+const getStatusColor = (status) => {
+    switch(status) {
+        case 1: return 'bg-yellow-400';
+        case 2: return 'bg-blue-500';
+        case 3: return 'bg-primary';
+        case 4: return 'bg-red-500';
+        default: return 'bg-gray-300';
+    }
+};
+
+const getStatusBadgeClass = (status) => {
+    switch(status) {
+        case 1: return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20';
+        case 2: return 'bg-blue-50 text-blue-700 ring-blue-700/10';
+        case 3: return 'bg-green-50 text-green-700 ring-green-600/20';
+        case 4: return 'bg-red-50 text-red-700 ring-red-600/10';
+        default: return 'bg-gray-50 text-gray-600 ring-gray-500/10';
+    }
+};
+
+// --- Actions ---
+const initData = async () => {
+    // Clock
+    setInterval(() => {
+        currentTime.value = new Intl.DateTimeFormat('ar-LY', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }).format(new Date());
+    }, 1000);
+
+    try {
+        const [stationRes, coordRes, officesRes] = await Promise.all([
+            api.getQureaStation(),
+            api.getCoordinations(),
+            api.getOfficeCrs()
+        ]);
+        
+        qureaStationStatus.value = stationRes.data?.object || {};
+        coordinations.value = coordRes.data?.object || [];
+        
+        // Flatten office list if structure is { list: [] } or just []
+        const rawOffices = officesRes.data?.object || [];
+        offices.value = Array.isArray(rawOffices) ? rawOffices : (rawOffices.list || []);
+
+    } catch (e) {
+        console.error("Initialization error", e);
+    }
+};
+
+const selectOffice = (office) => {
+    selectedOffice.value = office;
+    currentPage.value = 1;
+    registers.value = [];
+    winners.value = [];
+    
+    // Default tab logic
+    if (office.status === 3) {
+        activeTab.value = 'winners';
+        loadWinners(office.id);
+    } else {
+        activeTab.value = 'registers';
+        loadRegisters(office.id, 1);
+    }
+};
+
+const loadRegisters = async (officeId, page) => {
+    loadingRegisters.value = true;
+    try {
+        const res = await api.getRegisters(officeId, page, pageSize.value);
+        // Assuming API returns { object: { items: [], ... } } or just list
+        // Adjust based on real API response which we haven't seen for Registes fully yet (just 404/500 in spec, but likely list)
+        const data = res.data?.object || [];
+        // If it returns paginated object
+        registers.value = Array.isArray(data) ? data : (data.items || data.list || []); 
+    } catch (e) {
+        console.error('Error loading registers', e);
+    } finally {
+        loadingRegisters.value = false;
+    }
+};
+
+const changePage = (newPage) => {
+    if (newPage < 1) return;
+    currentPage.value = newPage;
+    loadRegisters(selectedOffice.value.id, newPage);
+};
+
+const loadWinners = async (officeId) => {
+    loadingWinners.value = true;
+    try {
+        const res = await api.getOfficeWinners(officeId);
+        winners.value = Array.isArray(res.data?.object) ? res.data.object : (res.data?.object?.list || []);
+    } catch (e) {
+        console.error("Error loading winners", e);
+    } finally {
+        loadingWinners.value = false;
+    }
+};
+
+const handleStartQurea = async () => {
+    if (!selectedOffice.value) return;
+    processing.value = true;
+    try {
+        await api.startQurea(selectedOffice.value.id);
+        
+        // Optimistically update status
+        selectedOffice.value.status = 2; // In Progress
+        
+        // Poll or check status logic would go here. For now, we assume swift completion or switch to winners tab 
+        // to verify.
+        
+        // Re-fetch office details to confirm status ?? 
+        // For simplicity:
+        alert('تم طلب بدء القرعة للمكتب');
+        
+        // Refresh this office in the list
+        // (Implementation note: Ideally we fetch single office status again)
+        
+    } catch (e) {
+        console.error(e);
+        alert('خطأ في بدء القرعة');
+    } finally {
+        processing.value = false;
+    }
+};
+
+const handleLogout = () => {
+    logout();
+};
+
+// Watchers
+watch(activeTab, (newTab) => {
+    if (selectedOffice.value) {
+        if (newTab === 'registers' && registers.value.length === 0) {
+            loadRegisters(selectedOffice.value.id, currentPage.value);
+        } else if (newTab === 'winners' && winners.value.length === 0 && selectedOffice.value.status === 3) {
+            loadWinners(selectedOffice.value.id);
+        }
+    }
+});
+
+onMounted(() => {
+    initData();
+});
+</script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #e5e7eb;
+    border-radius: 20px;
+}
+</style>
