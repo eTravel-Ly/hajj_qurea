@@ -278,8 +278,11 @@
 
 <script setup>
 import { ref, computed, onMounted, watch } from 'vue';
+import { useRouter } from 'vue-router';
 import api from '../services/api';
 import { logout } from '../services/auth';
+
+const router = useRouter();
 
 // --- State ---
 const currentTime = ref('');
@@ -470,20 +473,9 @@ const loadWinners = async (officeId) => {
 
 const handleStartQurea = async () => {
     if (!selectedOffice.value) return;
-    processing.value = true;
-    try {
-        await api.startQurea(selectedOffice.value.id);
-        
-        // Reload data to check for status updates
-        await loadOfficesAndStation();
-        
-        alert('تم طلب بدء القرعة للمكتب');
-    } catch (e) {
-        console.error(e);
-        alert('خطأ في بدء القرعة');
-    } finally {
-        processing.value = false;
-    }
+    
+    // Navigate to Qurea page with the office ID
+    router.push(`/qurea/${selectedOffice.value.id}`);
 };
 
 const handleLogout = () => {

@@ -42,29 +42,44 @@
       </header>
 
       <!-- Main Content -->
-      <main class="flex-grow flex overflow-y-auto">
+      <main class="flex-grow flex overflow-hidden" style="height: calc(100vh - 4rem);">
         <!-- Left Panel: Center Info -->
         <aside 
           class="bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden"
-          :class="sidebarVisible ? 'w-80 p-6 border-l border-gray-200' : '!w-0 !p-0 !min-w-0 !max-w-0 border-0'"
+          :class="sidebarVisible ? 'w-80 border-l border-gray-200' : '!w-0 !p-0 !min-w-0 !max-w-0 border-0'"
         >
-          <div v-show="sidebarVisible" class="mb-6">
-            <h2 class="text-xl font-bold text-gray-800 mb-4">{{ selectedCenter?.name || 'مركز طرابلس الكبرى' }}</h2>
-            <div class="space-y-4">
-              <div>
-                <p class="text-sm text-gray-500 mb-2">الحصة الإجمالية</p>
-                <p class="text-2xl font-bold text-gray-800">{{ selectedCenter?.quota || centerTotalQuota }} حاج</p>
-              </div>
-              <div>
-                <div class="flex justify-between items-center mb-2">
-                  <span class="text-sm text-gray-500">نسبة الإنجاز</span>
-                  <span class="text-sm font-bold text-gray-700">{{ completionPercentage }}%</span>
-                </div>
-                <div class="w-full bg-gray-200 rounded-full h-3">
-                  <div 
-                    class="bg-primary h-3 rounded-full transition-all duration-500" 
-                    :style="{ width: completionPercentage + '%' }"
-                  ></div>
+          <div v-show="sidebarVisible" class="flex flex-col h-full p-6">
+            <!-- Offices List -->
+            <div class="flex-1 overflow-y-auto min-h-0">
+              <h3 class="text-lg font-bold text-gray-800 mb-3">المكاتب</h3>
+              <div class="space-y-3">
+                <div 
+                  v-for="office in offices" 
+                  :key="office.id"
+                  @click="selectOffice(office.id)"
+                  class="bg-white rounded-lg border-2 p-3 transition-all cursor-pointer"
+                  :class="String(office.id) === String(route.params.officeId) ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20' : 'border-gray-200'"
+                >
+                  <h4 class="font-bold text-sm text-gray-800 mb-2">{{ office.name }}</h4>
+                  <div class="space-y-1">
+                    <div class="flex items-center gap-2">
+                      <p class="text-xs text-gray-500">الحصة:</p>
+                      <p class="text-sm font-bold text-gray-800">{{ office.quota }} حاج</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                      <p class="text-xs text-gray-500">تم إختيار:</p>
+                      <p class="text-sm font-bold text-gray-800">{{ office.selectedCount || 0 }} حاج</p>
+                    </div>
+                    <div class="flex items-center gap-2 mt-2">
+                      <span 
+                        class="w-2 h-2 rounded-full"
+                        :class="getStatusDotColor(office.status)"
+                      ></span>  
+                      <span class="text-xs font-bold" :class="getStatusTextColor(office.status)">
+                        {{ getStatusText(office.status) }}
+                      </span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -72,7 +87,7 @@
         </aside>
 
         <!-- Center Content -->
-        <div class="flex-grow flex flex-col overflow-y-auto p-6 relative">
+        <div class="flex-grow flex flex-col overflow-y-auto p-6 relative min-h-0">
           <!-- Current Office Card - Top Left -->
           <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-48 bg-white rounded-xl border-2 border-primary/30 p-3 shadow-lg">
             <h4 class="font-bold text-base text-gray-800 mb-3">{{ currentOffice.name }}</h4>
@@ -99,7 +114,7 @@
           </div>
 
           <!-- Title -->
-          <div class="text-center mb-3">
+          <div class="text-center mb-3 mt-[15px]">
             <h1 class="text-xl font-bold text-gray-800">قرعة الحج لموسم 1447 هجري - 2026 ميلادي</h1>
           </div>
 
@@ -112,24 +127,36 @@
             </div>
 
             <!-- Pilgrim and Companion Cards -->
-            <div class="w-full max-w-4xl mb-4">
-              <div class="bg-white rounded-xl border-2 border-primary/30 p-4 shadow-lg">
-                <div class="grid grid-cols-2 gap-4">
-                  <!-- Companion Card -->
+            <div class="w-full max-w-4xl mb-4 mt-6">
+              <div class="bg-white rounded-xl border-2 border-primary/30 p-6">
+                <div class="grid grid-cols-2" style="gap: calc(var(--spacing) * 19);">
+                  <!-- Pilgrim Card - Right side in RTL -->
                   <div>
-                    <h3 class="text-base font-bold text-primary mb-4 text-center">المرافق</h3>
-                    <div class="text-center">
-                      <p class="text-lg font-bold text-gray-800">{{ currentCompanion?.name || 'ايهاب البهلول فرج القيزاني' }}</p>
-                      <p v-if="currentCompanion?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentCompanion.nationalId }}</p>
+                    <h3 class="text-base font-bold text-[#D8A663] mb-4 text-right">الحاج</h3>
+                    <div class="text-right">
+                      <p 
+                        :key="isDrawing ? animatedPilgrimName : currentPilgrim?.name"
+                        class="text-xl font-bold text-gray-800 transition-all duration-75"
+                        :class="isDrawing ? 'animate-pulse' : ''"
+                      >
+                        {{ isDrawing ? (animatedPilgrimName || '---') : (currentPilgrim?.name || 'ايهاب البهلول فرج القيزاني')}}
+                      </p>
+                      <p v-if="!isDrawing && currentPilgrim?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentPilgrim.nationalId }}</p>
                     </div>
                   </div>
 
-                  <!-- Pilgrim Card -->
+                  <!-- Companion Card - Left side in RTL -->
                   <div>
-                    <h3 class="text-base font-bold text-primary mb-4 text-center">الحاج</h3>
-                    <div class="text-center">
-                      <p class="text-lg font-bold text-gray-800">{{ currentPilgrim?.name || 'ايهاب البهلول فرج القيزاني'}}</p>
-                      <p v-if="currentPilgrim?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentPilgrim.nationalId }}</p>
+                    <h3 class="text-base font-bold text-[#D8A663] mb-4 text-right">المرافق</h3>
+                    <div class="text-right">
+                      <p 
+                        :key="isDrawing ? animatedCompanionName : currentCompanion?.name"
+                        class="text-xl font-bold text-gray-800 transition-all duration-75"
+                        :class="isDrawing ? 'animate-pulse' : ''"
+                      >
+                        {{ isDrawing ? (animatedCompanionName || '---') : (currentCompanion?.name || 'ايهاب البهلول فرج القيزاني') }}
+                      </p>
+                      <p v-if="!isDrawing && currentCompanion?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentCompanion.nationalId }}</p>
                     </div>
                   </div>
                 </div>
@@ -138,20 +165,20 @@
           </div>
 
           <!-- Office Cards Scrollable Section -->
-          <div class="mb-2">
+          <!-- <div class="mb-2">
             <div class="relative">
               <!-- Scroll Left Button - Select Previous Office -->
-              <button 
+              <!-- <button 
                 @click="selectPreviousOffice"
                 class="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-transparent rounded-full p-2 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1);">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                 </svg>
-              </button>
+              </button> -->
 
               <!-- Office Cards Container -->
-              <div 
+              <!-- <div 
                 ref="officeCardsContainer"
                 class="flex gap-4 overflow-x-auto scrollbar-hide px-8"
                 @scroll="handleOfficeScroll"
@@ -186,19 +213,19 @@
                     </div>
                   </div>
                 </div>
-              </div>
+              </div> -->
 
               <!-- Scroll Right Button - Select Next Office -->
-              <button 
+              <!-- <button 
                 @click="selectNextOffice"
                 class="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-transparent rounded-full p-2 transition-colors"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1);">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                 </svg>
-              </button>
-            </div>
-          </div>
+              </button> -->
+            <!-- </div>
+          </div> -->
 
           <!-- Bottom Action Bar -->
           <div class="sticky bottom-0 flex justify-between items-center bg-[#025446] rounded-xl p-3 shadow-lg z-30 mt-auto">
@@ -258,6 +285,8 @@ const currentOffice = ref(null);
 const lotteryNumber = ref(null);
 const currentPilgrim = ref(null);
 const currentCompanion = ref(null);
+const animatedPilgrimName = ref('');
+const animatedCompanionName = ref('');
 const isDrawing = ref(false);
 const officeCardsContainer = ref(null);
 const officeScrollLeft = ref(0);
@@ -385,19 +414,19 @@ const scrollToSelectedOffice = () => {
   handleOfficeScroll();
 };
 
-// Office scrolling
-const scrollOffices = (direction) => {
-  if (!officeCardsContainer.value) return;
-  const scrollAmount = 220; // Adjusted for smaller cards (w-48)
-  const newScrollLeft = direction === 'left' 
-    ? Math.max(0, officeCardsContainer.value.scrollLeft - scrollAmount)
-    : officeCardsContainer.value.scrollLeft + scrollAmount;
-  
-  officeCardsContainer.value.scrollTo({
-    left: newScrollLeft,
-    behavior: 'smooth'
-  });
-};
+// Office scrolling - COMMENTED OUT (now using selectNextOffice/selectPreviousOffice)
+// const scrollOffices = (direction) => {
+//   if (!officeCardsContainer.value) return;
+//   const scrollAmount = 220; // Adjusted for smaller cards (w-48)
+//   const newScrollLeft = direction === 'left' 
+//     ? Math.max(0, officeCardsContainer.value.scrollLeft - scrollAmount)
+//     : officeCardsContainer.value.scrollLeft + scrollAmount;
+//   
+//   officeCardsContainer.value.scrollTo({
+//     left: newScrollLeft,
+//     behavior: 'smooth'
+//   });
+// };
 
 const handleOfficeScroll = () => {
   if (!officeCardsContainer.value) return;
@@ -421,7 +450,21 @@ const handleStartLottery = async () => {
   
   isDrawing.value = true;
   
+  // Reset animated names
+  animatedPilgrimName.value = '';
+  animatedCompanionName.value = '';
+  
   try {
+    // Fetch registers for name animation
+    let registerNames = [];
+    try {
+      const registersRes = await api.getRegisters(currentOffice.value.id, 1, 100);
+      const registersData = registersRes.data?.object || [];
+      registerNames = Array.isArray(registersData) ? registersData : (registersData.items || registersData.list || []);
+    } catch (e) {
+      console.warn('Could not fetch registers for animation', e);
+    }
+    
     // Start the lottery process
     await api.startQurea(currentOffice.value.id);
     
@@ -430,21 +473,47 @@ const handleStartLottery = async () => {
     let frameCount = 0;
     const totalFrames = 60; // 1 second at 60fps
     
+    // Prepare name arrays for animation
+    let namePool = [];
+    if (registerNames.length > 0) {
+      namePool = registerNames.map(r => r?.name).filter(Boolean);
+    } else {
+      namePool = ['محمد أحمد علي', 'عبدالله حسن محمد', 'خالد سعيد إبراهيم', 'عمر فتحي محمود', 'يوسف ناصر سالم', 'أحمد محمود حسن', 'علي يوسف إبراهيم', 'حسن خالد سعيد'];
+    }
+    
+    // Ensure we have names to animate
+    if (namePool.length === 0) {
+      namePool = ['---'];
+    }
+    
     drawingInterval = setInterval(() => {
       frameCount++;
+      
+      // Animate lottery number
       lotteryNumber.value = Math.floor(Math.random() * maxNumber) + 1;
+      
+      // Animate names - rapid cycling like the number (change every frame for fast animation)
+      const randomPilgrimIndex = Math.floor(Math.random() * namePool.length);
+      const randomCompanionIndex = Math.floor(Math.random() * namePool.length);
+      animatedPilgrimName.value = namePool[randomPilgrimIndex] || '---';
+      animatedCompanionName.value = namePool[randomCompanionIndex] || '---';
       
       if (frameCount >= totalFrames) {
         clearInterval(drawingInterval);
         // Get final result from API
         loadLotteryResult();
         isDrawing.value = false;
+        // Clear animated names
+        animatedPilgrimName.value = '';
+        animatedCompanionName.value = '';
       }
     }, 16); // ~60fps
     
   } catch (error) {
     console.error('Error starting lottery:', error);
     isDrawing.value = false;
+    animatedPilgrimName.value = '';
+    animatedCompanionName.value = '';
     alert('حدث خطأ أثناء بدء القرعة');
   }
 };
