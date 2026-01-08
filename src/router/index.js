@@ -2,7 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router';
 import { authState } from '../services/auth';
 import Login from '../views/Login.vue';
 import Dashboard from '../views/Dashboard.vue';
-
+import Qurea from '../views/Qurea.vue';
 const routes = [
     {
         path: '/',
@@ -14,6 +14,13 @@ const routes = [
         path: '/login',
         name: 'Login',
         component: Login
+    },
+    {
+        path: '/qurea/:officeId',
+        name: 'Qurea',
+        component: Qurea,
+        meta: { requiresAuth: true }
+
     }
 ];
 

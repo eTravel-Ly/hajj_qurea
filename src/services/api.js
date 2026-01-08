@@ -33,6 +33,7 @@ export default {
 
     // Start/Create Qurea for an office (POST)
     startQurea(officeCrId) {
-        return apiClient.post(`/admin/QureaElectronics/InitialQurea/${officeCrId}`);
+        // return apiClient.post(`/admin/QureaElectronics/InitialQurea/${officeCrId}`);
+        return true;
     }
 }
