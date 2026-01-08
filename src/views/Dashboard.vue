@@ -480,7 +480,7 @@ const handleStartQurea = async () => {
         if (res.data?.msg === 'لم يتم تنفيذ القرعة الالكترونية للمكتب') {
             processing.value = false;
 
-            alert('not finished yet (i will add a pop up massege for this)  ');
+            alert('pleas wait untill the the qurea is finished');
         }
 
         if(res.data?.object !== null){
