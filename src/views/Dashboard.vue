@@ -473,14 +473,31 @@ const loadWinners = async (officeId) => {
 
 const handleStartQurea = async () => {
     if (!selectedOffice.value) return;
-    
+    processing.value = true;
+    try {
+        await api.startQurea(selectedOffice.value.id);
+      const res = await api.getOfficeWinners(selectedOffice.value.id);
+        if (res.data?.msg === 'لم يتم تنفيذ القرعة الالكترونية للمكتب') {
+            processing.value = false;
+
+            alert('not finished yet (i will add a pop up massege for this)  ');
+        }
+
+        if(res.data?.object !== null){
+        router.push(`/qurea/${selectedOffice.value.id}`);
+        }
+        processing.value = false;
+    } catch (e) {
+        console.error(e);
+        processing.value = false;
+        alert('حدث خطأ أثناء بدء القرعة');
+    }
     // Navigate to Qurea page with the office ID
-    router.push(`/qurea/${selectedOffice.value.id}`);
 };
 
 const handleLogout = () => {
     logout();
-};
+};  
 
         // Watchers
 watch(activeTab, (newTab) => {
