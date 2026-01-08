@@ -67,25 +67,50 @@
         </div>
 
         <!-- List -->
-        <div class="flex-grow overflow-y-auto overflow-x-hidden custom-scrollbar p-2 space-y-1">
+        <div class="flex-grow overflow-y-auto overflow-x-hidden custom-scrollbar p-3 space-y-3">
            <div v-for="office in filteredOffices" :key="office.id" 
                 @click="selectOffice(office)"
-                class="p-3 rounded-lg cursor-pointer transition-all duration-200 border border-transparent hover:border-gray-200 hover:shadow-sm group relative"
-                :class="selectedOffice?.id === office.id ? 'bg-[#D8A663]/10 border-[#D8A663]/30' : 'bg-white hover:bg-gray-50'"
+                class="p-4 rounded-xl border transition-all duration-200 cursor-pointer bg-white border-gray-100 hover:border-gray-300 hover:shadow-md group relative"
+                :class="selectedOffice?.id === office.id ? 'ring-2 ring-[#D8A663] border-[#D8A663] bg-[#fffbf5]' : 'bg-white'"
            >
-              <!-- Selection Indicator -->
-              <div v-if="selectedOffice?.id === office.id" class="absolute right-0 top-1/2 -translate-y-1/2 h-8 w-1 bg-[#D8A663] rounded-l-full"></div>
-
-              <div class="flex justify-between items-start mb-1 px-1">
-                 <h4 class="text-sm font-bold text-gray-800 line-clamp-1 group-hover:text-primary transition-colors">{{ office.name }}</h4>
-                 <div class="w-2 h-2 rounded-full flex-shrink-0 mt-1.5" :class="getStatusColor(office.status)"></div>
+              <!-- Header -->
+              <div class="mb-3">
+                 <h4 class="font-bold text-gray-800 text-base group-hover:text-primary transition-colors line-clamp-1" :title="office.name">
+                    {{ office.name }}
+                 </h4>
               </div>
-              
-              <div class="flex justify-between items-center text-[11px] text-gray-500 px-1">
-                 <span class="opacity-70">{{ getStatusText(office.status) }}</span>
-                 <div class="flex gap-1 items-center bg-gray-100 px-1.5 py-0.5 rounded text-gray-600">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-                    <span>{{ office.quota }}</span>
+
+              <!-- Details -->
+              <div class="space-y-2 text-xs">
+                  <!-- Quota -->
+                  <div class="flex justify-between items-center">
+                      <span class="text-gray-500 font-medium">الحصة الإجمالية:</span>
+                      <span class="font-bold text-gray-800">{{ office.quota || 0 }} حاج</span>
+                  </div>
+
+                  <!-- Population -->
+                  <div class="flex justify-between items-center">
+                      <span class="text-gray-500 font-medium">عدد المسجلين:</span>
+                      <span class="font-bold text-gray-800">{{ office.populationCount || 0 }}</span>
+                  </div>
+
+                  <!-- Done Count -->
+                  <div class="flex justify-between items-center">
+                      <span class="text-gray-500 font-medium">تم إختيار:</span>
+                      <span class="font-bold" :class="office.doneCount > 0 ? 'text-[#D8A663]' : 'text-gray-800'">
+                          {{ office.doneCount || 0 }} حاج
+                      </span>
+                  </div>
+              </div>
+
+              <!-- Status Footer -->
+              <div class="mt-3 pt-2 border-t border-gray-100 flex items-center justify-between">
+                 <span class="text-xs text-gray-400">الحالة:</span>
+                 <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold" :class="getStatusTextColor(office.status)">
+                        {{ getStatusText(office.status) }}
+                    </span>
+                    <span class="w-2.5 h-2.5 rounded-full" :class="getStatusColor(office.status)"></span>
                  </div>
               </div>
            </div>
@@ -138,7 +163,7 @@
               <!-- Primary Action -->
               <div>
                   <button 
-                    v-if="selectedOffice.status === 1"
+                    v-if="selectedOffice.status === 1 || selectedOffice.status === 0"
                     @click="handleStartQurea"
                     :disabled="processing"
                     class="bg-[#D8A663] text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#c29558] flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -221,16 +246,7 @@
 
              <!-- Tab: Winners -->
              <div v-if="activeTab === 'winners'">
-                <div v-if="selectedOffice.status !== 3" class="flex flex-col items-center justify-center p-12 text-center h-full">
-                    <div class="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mb-4 text-gray-400">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                    </div>
-                    <h3 class="text-lg font-bold text-gray-600">القرعة لم تتم بعد</h3>
-                    <p class="text-gray-400 mt-2">عليك بدء القرعة أولاً لإظهار الفائزين</p>
-                    <button v-if="selectedOffice.status === 1" @click="handleStartQurea" class="mt-6 text-primary underline hover:text-green-700">بدأ القرعة الآن</button>
-                </div>
-
-                <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div v-for="(winner, idx) in winners" :key="idx" 
                          class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm border-l-4 border-l-[#D8A663] hover:shadow-md transition-shadow">
                         <div class="flex justify-between items-start">
@@ -247,7 +263,7 @@
                         </div>
                     </div>
                     <div v-if="winners.length === 0" class="col-span-full p-8 text-center text-gray-400">
-                        جاري جلب الفائزين...
+                        {{ winnersMessage || 'لا يوجد فائزين حالياً' }}
                     </div>
                 </div>
              </div>
@@ -307,7 +323,8 @@ const formatDate = (dateStr) => {
 // --- Status Helpers ---
 const getStatusText = (status) => {
     switch(status) {
-        case 1: return 'في الانتظار';
+        case 0: 
+        case 1: return 'لم تبدأ بعد';
         case 2: return 'قيد الإجراء';
         case 3: return 'منتهي';
         case 4: return 'ملغي';
@@ -317,18 +334,31 @@ const getStatusText = (status) => {
 
 const getStatusColor = (status) => {
     switch(status) {
-        case 1: return 'bg-yellow-400';
-        case 2: return 'bg-blue-500';
-        case 3: return 'bg-primary';
+        case 0:
+        case 1: return 'bg-gray-400';
+        case 2: return 'bg-[#D8A663]'; // Gold/Orange
+        case 3: return 'bg-primary';    // Green
         case 4: return 'bg-red-500';
         default: return 'bg-gray-300';
     }
 };
 
+const getStatusTextColor = (status) => {
+    switch(status) {
+        case 0:
+        case 1: return 'text-gray-500';
+        case 2: return 'text-[#D8A663]';
+        case 3: return 'text-primary';
+        case 4: return 'text-red-500';
+        default: return 'text-gray-400';
+    }
+};
+
 const getStatusBadgeClass = (status) => {
     switch(status) {
-        case 1: return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20';
-        case 2: return 'bg-blue-50 text-blue-700 ring-blue-700/10';
+        case 0:
+        case 1: return 'bg-gray-100 text-gray-600 ring-gray-600/10';
+        case 2: return 'bg-[#fffbf5] text-[#D8A663] ring-[#D8A663]/30 border border-[#D8A663]/20';
         case 3: return 'bg-green-50 text-green-700 ring-green-600/20';
         case 4: return 'bg-red-50 text-red-700 ring-red-600/10';
         default: return 'bg-gray-50 text-gray-600 ring-gray-500/10';
@@ -342,6 +372,10 @@ const initData = async () => {
         currentTime.value = new Intl.DateTimeFormat('ar-LY', { hour: 'numeric', minute: 'numeric', second: 'numeric', hour12: true }).format(new Date());
     }, 1000);
 
+    await loadOfficesAndStation();
+};
+
+const loadOfficesAndStation = async () => {
     try {
         const [stationRes, coordRes, officesRes] = await Promise.all([
             api.getQureaStation(),
@@ -352,9 +386,23 @@ const initData = async () => {
         qureaStationStatus.value = stationRes.data?.object || {};
         coordinations.value = coordRes.data?.object || [];
         
-        // Flatten office list if structure is { list: [] } or just []
         const rawOffices = officesRes.data?.object || [];
-        offices.value = Array.isArray(rawOffices) ? rawOffices : (rawOffices.list || []);
+        const newOfficeList = Array.isArray(rawOffices) ? rawOffices : (rawOffices.list || []);
+        offices.value = newOfficeList;
+
+        // Update selected office reference if it exists
+        if (selectedOffice.value) {
+            const updated = newOfficeList.find(o => o.id === selectedOffice.value.id);
+            if (updated) {
+                // Keep the selection but update properties (like status)
+                selectedOffice.value = updated;
+                
+                // Always load winners if on that tab
+                if (activeTab.value === 'winners') {
+                     loadWinners(updated.id);
+                }
+            }
+        }
 
     } catch (e) {
         console.error("Initialization error", e);
@@ -367,6 +415,8 @@ const selectOffice = (office) => {
     registers.value = [];
     winners.value = [];
     
+    console.log("Selected Office Status:", office.status);
+
     // Default tab logic
     if (office.status === 3) {
         activeTab.value = 'winners';
@@ -381,10 +431,7 @@ const loadRegisters = async (officeId, page) => {
     loadingRegisters.value = true;
     try {
         const res = await api.getRegisters(officeId, page, pageSize.value);
-        // Assuming API returns { object: { items: [], ... } } or just list
-        // Adjust based on real API response which we haven't seen for Registes fully yet (just 404/500 in spec, but likely list)
         const data = res.data?.object || [];
-        // If it returns paginated object
         registers.value = Array.isArray(data) ? data : (data.items || data.list || []); 
     } catch (e) {
         console.error('Error loading registers', e);
@@ -399,13 +446,23 @@ const changePage = (newPage) => {
     loadRegisters(selectedOffice.value.id, newPage);
 };
 
+const winnersMessage = ref('');
+
 const loadWinners = async (officeId) => {
+    console.log("Fetching Winners for:", officeId);
     loadingWinners.value = true;
+    winnersMessage.value = ''; // Reset message
     try {
         const res = await api.getOfficeWinners(officeId);
-        winners.value = Array.isArray(res.data?.object) ? res.data.object : (res.data?.object?.list || []);
+        if (!res.data?.object) {
+            winners.value = [];
+            winnersMessage.value = res.data?.msg || 'لم يتم العثور على بيانات';
+        } else {
+            winners.value = Array.isArray(res.data?.object) ? res.data.object : (res.data?.object?.list || []);
+        }
     } catch (e) {
         console.error("Error loading winners", e);
+        winnersMessage.value = 'حدث خطأ أثناء تحميل البيانات';
     } finally {
         loadingWinners.value = false;
     }
@@ -417,19 +474,10 @@ const handleStartQurea = async () => {
     try {
         await api.startQurea(selectedOffice.value.id);
         
-        // Optimistically update status
-        selectedOffice.value.status = 2; // In Progress
+        // Reload data to check for status updates
+        await loadOfficesAndStation();
         
-        // Poll or check status logic would go here. For now, we assume swift completion or switch to winners tab 
-        // to verify.
-        
-        // Re-fetch office details to confirm status ?? 
-        // For simplicity:
         alert('تم طلب بدء القرعة للمكتب');
-        
-        // Refresh this office in the list
-        // (Implementation note: Ideally we fetch single office status again)
-        
     } catch (e) {
         console.error(e);
         alert('خطأ في بدء القرعة');
@@ -442,12 +490,12 @@ const handleLogout = () => {
     logout();
 };
 
-// Watchers
+        // Watchers
 watch(activeTab, (newTab) => {
     if (selectedOffice.value) {
         if (newTab === 'registers' && registers.value.length === 0) {
             loadRegisters(selectedOffice.value.id, currentPage.value);
-        } else if (newTab === 'winners' && winners.value.length === 0 && selectedOffice.value.status === 3) {
+        } else if (newTab === 'winners') {
             loadWinners(selectedOffice.value.id);
         }
     }
