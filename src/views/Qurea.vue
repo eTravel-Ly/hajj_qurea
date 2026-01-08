@@ -250,14 +250,14 @@
             <!-- Start Lottery Button -->
             <button     
               @click="handleStartLottery"
-              :disabled="isDrawing || currentOffice?.status !== 0"
+              :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown"
               class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg v-if="!isDrawing" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
               <span v-if="isDrawing" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
-              <span>{{ isDrawing ? 'جاري السحب...' : 'بدأ القرعة' }}</span>
+              <span>{{ isDrawing ? 'جاري السحب...' : lotteryButtonText }}</span>
             </button>
           </div>
         </div>
@@ -288,6 +288,8 @@ const currentCompanion = ref(null);
 const animatedPilgrimName = ref('');
 const animatedCompanionName = ref('');
 const isDrawing = ref(false);
+const winnersQueue = ref([]);
+const currentWinnerIndex = ref(-1);
 const officeCardsContainer = ref(null);
 const officeScrollLeft = ref(0);
 const canScrollRight = ref(false);
@@ -326,6 +328,22 @@ const centerSelectedCount = computed(() => {
 const completionPercentage = computed(() => {
   if (centerTotalQuota.value === 0) return 0;
   return Math.round((centerSelectedCount.value / centerTotalQuota.value) * 100);
+});
+
+// Check if all winners have been shown
+const allWinnersShown = computed(() => {
+  return winnersQueue.value.length > 0 && currentWinnerIndex.value >= winnersQueue.value.length - 1;
+});
+
+// Button text based on state
+const lotteryButtonText = computed(() => {
+  if (winnersQueue.value.length === 0) {
+    return 'بدأ القرعة';
+  } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
+    return `تم عرض جميع الفائزين (${winnersQueue.value.length})`;
+  } else {
+    return `الفائز التالي (${currentWinnerIndex.value + 2}/${winnersQueue.value.length})`;
+  }
 });
 
 // Status helpers
@@ -448,9 +466,39 @@ const handleCenterChange = () => {
 const handleStartLottery = async () => {
   if (!currentOffice.value || isDrawing.value) return;
   
-  isDrawing.value = true;
+  // Check if we need to load winners from API
+  if (winnersQueue.value.length === 0) {
+    // First time load all winners from API
+    try {
+      await api.startQurea(currentOffice.value.id);
+      const res = await api.getOfficeWinners(currentOffice.value.id);
+      const winners = res.data?.object || [];
+      
+      if (!Array.isArray(winners) || winners.length === 0) {
+        alert('لا توجد نتائج قرعة');
+        return;
+      }
+      
+      winnersQueue.value = winners;
+      currentWinnerIndex.value = 0;
+    } catch (error) {
+      console.error('Error loading winners:', error);
+      alert('حدث خطأ في تحميل نتائج القرعة');
+      return;
+    }
+  } else {
+    // Already have winners move to next winner
+    currentWinnerIndex.value++;
+    
+    // Check if we've reached the end
+    if (currentWinnerIndex.value >= winnersQueue.value.length) {
+      currentWinnerIndex.value = winnersQueue.value.length - 1; // Stay at last
+      return;
+    }
+  }
   
-  // Reset animated names
+  // Start animation
+  isDrawing.value = true;
   animatedPilgrimName.value = '';
   animatedCompanionName.value = '';
   
@@ -464,9 +512,6 @@ const handleStartLottery = async () => {
     } catch (e) {
       console.warn('Could not fetch registers for animation', e);
     }
-    
-    // Start the lottery process
-    await api.startQurea(currentOffice.value.id);
     
     // Simulate lottery drawing animation
     const maxNumber = currentOffice.value.quota || 1000;
@@ -500,8 +545,8 @@ const handleStartLottery = async () => {
       
       if (frameCount >= totalFrames) {
         clearInterval(drawingInterval);
-        // Get final result from API
-        loadLotteryResult();
+        // Show winner from queue
+        showCurrentWinner();
         isDrawing.value = false;
         // Clear animated names
         animatedPilgrimName.value = '';
@@ -510,34 +555,32 @@ const handleStartLottery = async () => {
     }, 16); // ~60fps
     
   } catch (error) {
-    console.error('Error starting lottery:', error);
+    console.error('Error during animation:', error);
     isDrawing.value = false;
     animatedPilgrimName.value = '';
     animatedCompanionName.value = '';
-    alert('حدث خطأ أثناء بدء القرعة');
+    alert('حدث خطأ أثناء عرض القرعة');
   }
 };
 
-// Load lottery result
-const loadLotteryResult = async () => {
-  try {
-    const res = await api.getOfficeWinners(route.params.officeId);
-    const winners = Array.isArray(res.data?.object) ? res.data.object : (res.data?.object?.list || []);
+// Show current winner from queue
+const showCurrentWinner = () => {
+  if (currentWinnerIndex.value >= 0 && currentWinnerIndex.value < winnersQueue.value.length) {
+    const winner = winnersQueue.value[currentWinnerIndex.value];
     
-    if (winners.length > 0) {
-      // Show first winner as pilgrim
-      currentPilgrim.value = winners[0];
-      // If there's a companion, show it
-      if (winners.length > 1) {
-        currentCompanion.value = winners[1];
-      }
-      lotteryNumber.value = winners[0]?.regId || winners[0]?.id || null;
-    }
+    // Map the response to display fields
+    lotteryNumber.value = winner.registerNumber || null;
+    currentPilgrim.value = {
+      name: winner.hajj || '---',
+      nationalId: null
+    };
+    currentCompanion.value = {
+      name: winner.companionHajj || '---',
+      nationalId: null
+    };
     
     // Refresh office data
     loadOffices();
-  } catch (error) {
-    console.error('Error loading lottery result:', error);
   }
 };
 
@@ -605,11 +648,6 @@ onMounted(() => {
     loadCenters(),
     loadOffices()
   ]).then(() => {
-    // Check if office has completed lottery, load results
-    if (currentOffice.value?.status === 3) {
-      loadLotteryResult();
-    }
-    
     // Scroll to current office
     setTimeout(() => {
       scrollToSelectedOffice();
@@ -636,10 +674,9 @@ watch(() => route.params.officeId, async (newOfficeId) => {
     currentPilgrim.value = null;
     currentCompanion.value = null;
     
-    // Check if office has completed lottery, load results
-    if (currentOffice.value?.status === 3) {
-      loadLotteryResult();
-    }
+    // Reset winners queue when changing offices
+    winnersQueue.value = [];
+    currentWinnerIndex.value = -1;
     
     // Scroll to current office
     setTimeout(() => {
