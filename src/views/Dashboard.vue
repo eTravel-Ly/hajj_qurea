@@ -22,9 +22,7 @@
       </div>
 
       <button @click="handleLogout" class="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-        </svg>
+        <img src="/logout-02.png" alt="Logout" class="h-5 w-5" />
       </button>
     </header>
 
@@ -161,9 +159,37 @@
               </div>
 
               <!-- Primary Action -->
-              <div>
+              <div class="flex flex-col gap-2">
+                  <!-- Test Popup Buttons -->
+                  <div class="flex gap-2 mb-2">
+                      <button 
+                          @click="showAlert('هذه رسالة خطأ تجريبية', 'error', 'خطأ')"
+                          class="bg-red-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-600 transition-colors"
+                      >
+                          اختبار خطأ
+                      </button>
+                      <button 
+                          @click="showAlert('هذه رسالة تحذير تجريبية', 'warning', 'تحذير')"
+                          class="bg-yellow-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-yellow-600 transition-colors"
+                      >
+                          اختبار تحذير
+                      </button>
+                      <button 
+                          @click="showAlert('هذه رسالة نجاح تجريبية', 'success', 'نجاح')"
+                          class="bg-green-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-green-600 transition-colors"
+                      >
+                          اختبار نجاح
+                      </button>
+                      <button 
+                          @click="showAlert('هذه رسالة معلومات تجريبية', 'info', 'معلومات')"
+                          class="bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-600 transition-colors"
+                      >
+                          اختبار معلومات
+                      </button>
+                  </div>
+                  
                   <button 
-                    v-if="selectedOffice.status === 1 || selectedOffice.status === 0"
+                    v-if="selectedOffice.status === 0 || selectedOffice.status === 1"
                     @click="handleStartQurea"
                     :disabled="processing"
                     class="bg-[#D8A663] text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#c29558] flex items-center gap-2 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -172,9 +198,21 @@
                      <span>{{ processing ? 'جاري السحب...' : 'بدأ القرعة' }}</span>
                      <svg v-if="!processing" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                   </button>
+                  <button 
+                    v-else-if="selectedOffice.status === 2"
+                    @click="handleStartQurea"
+                    class="bg-yellow-500 text-white px-6 py-2.5 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-yellow-600 flex items-center gap-2 transition-all active:scale-95"
+                  >
+                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                     <span>مشاهدة القرعة</span>
+                  </button>
                   <div v-else-if="selectedOffice.status === 3" class="bg-green-50 text-green-700 px-4 py-2 rounded-lg border border-green-200 font-bold flex items-center gap-2">
                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd" /></svg>
                       <span>تمت القرعة بنجاح</span>
+                  </div>
+                  <div v-else-if="selectedOffice.status === 4" class="bg-red-50 text-red-700 px-4 py-2 rounded-lg border border-red-200 font-bold flex items-center gap-2">
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" /></svg>
+                      <span>القرعة ملغاة</span>
                   </div>
               </div>
            </div>
@@ -249,17 +287,28 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                     <div v-for="(winner, idx) in winners" :key="idx" 
                          class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm border-l-4 border-l-[#D8A663] hover:shadow-md transition-shadow">
-                        <div class="flex justify-between items-start">
+                        <div class="space-y-3">
+                            <!-- Pilgrim Section -->
                             <div>
-                                <h4 class="font-bold text-gray-800 text-lg mb-1">{{ winner.name }}</h4>
-                                <div class="space-y-1 text-sm text-gray-500">
-                                    <p class="flex items-center gap-2"><span class="text-xs text-gray-400">الرقم الوطني:</span> <span class="font-mono">{{ winner.nationalId }}</span></p>
-                                    <p class="flex items-center gap-2"><span class="text-xs text-gray-400">رقم التسجيل:</span> <span class="font-mono">{{ winner.regId || '-' }}</span></p>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-gray-800 text-lg">{{ winner.hajj }}</h4>
+                                    <span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded font-bold">حاج</span>
                                 </div>
                             </div>
-                            <span class="bg-primary/10 text-primary text-xs px-2 py-1 rounded font-bold">
-                                {{ idx % 2 === 0 ? 'حاج' : 'مرافق' }} <!-- Mock logic for label, replace with data if available -->
-                            </span>
+                            <!-- Companion Section -->
+                            <div>
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-gray-800 text-lg">{{ winner.companionHajj || 'لا يوجد مرافق' }}</h4>
+                                    <span class="bg-secondary/10 text-secondary text-xs px-2 py-1 rounded font-bold">مرافق</span>
+                                </div>
+                            </div>
+                            <!-- Registration Number -->
+                            <div class="pt-2 border-t border-gray-100">
+                                <p class="flex items-center gap-2 text-sm text-gray-500">
+                                    <span class="text-xs text-gray-400">رقم التسجيل:</span> 
+                                    <span class="font-mono font-bold">{{ winner.registerNumber || 'لا يوجد رقم تسجيل' }}</span>
+                                </p>
+                            </div>
                         </div>
                     </div>
                     <div v-if="winners.length === 0" class="col-span-full p-8 text-center text-gray-400">
@@ -273,6 +322,15 @@
 
       </main>
     </div>
+
+    <!-- Alert Modal -->
+    <AlertModal
+      :isVisible="alertModal.isVisible"
+      :type="alertModal.type"
+      :title="alertModal.title"
+      :message="alertModal.message"
+      @close="closeAlert"
+    />
   </div>
 </template>
 
@@ -281,6 +339,7 @@ import { ref, computed, onMounted, watch } from 'vue';
 import { useRouter } from 'vue-router';
 import api from '../services/api';
 import { logout } from '../services/auth';
+import AlertModal from '../components/AlertModal.vue';
 
 const router = useRouter();
 
@@ -307,6 +366,28 @@ const winners = ref([]);
 const loadingWinners = ref(false);
 
 const processing = ref(false);
+
+// Alert Modal State
+const alertModal = ref({
+    isVisible: false,
+    type: 'info', // 'error', 'warning', 'success', 'info'
+    title: 'تنبيه',
+    message: ''
+});
+
+// Alert Functions
+const showAlert = (message, type = 'info', title = 'تنبيه') => {
+    alertModal.value = {
+        isVisible: true,
+        type,
+        title,
+        message
+    };
+};
+
+const closeAlert = () => {
+    alertModal.value.isVisible = false;
+};
 
 // --- Computed ---
 const filteredOffices = computed(() => {
@@ -337,33 +418,33 @@ const getStatusText = (status) => {
 
 const getStatusColor = (status) => {
     switch(status) {
-        case 0:
-        case 1: return 'bg-gray-400';
-        case 2: return 'bg-[#D8A663]'; // Gold/Orange
-        case 3: return 'bg-primary';    // Green
-        case 4: return 'bg-red-500';
+        case 0: return 'bg-gray-400'; // None - gray
+        case 1: return 'bg-gray-400'; // Waiting - gray
+        case 2: return 'bg-yellow-500'; // InProgress - yellow
+        case 3: return 'bg-green-500'; // Completed - green
+        case 4: return 'bg-red-500'; // Cancelled - red
         default: return 'bg-gray-300';
     }
 };
 
 const getStatusTextColor = (status) => {
     switch(status) {
-        case 0:
-        case 1: return 'text-gray-500';
-        case 2: return 'text-[#D8A663]';
-        case 3: return 'text-primary';
-        case 4: return 'text-red-500';
+        case 0: return 'text-gray-500'; // None - gray
+        case 1: return 'text-gray-500'; // Waiting - gray
+        case 2: return 'text-yellow-600'; // InProgress - yellow
+        case 3: return 'text-green-600'; // Completed - green
+        case 4: return 'text-red-500'; // Cancelled - red
         default: return 'text-gray-400';
     }
 };
 
 const getStatusBadgeClass = (status) => {
     switch(status) {
-        case 0:
-        case 1: return 'bg-gray-100 text-gray-600 ring-gray-600/10';
-        case 2: return 'bg-[#fffbf5] text-[#D8A663] ring-[#D8A663]/30 border border-[#D8A663]/20';
-        case 3: return 'bg-green-50 text-green-700 ring-green-600/20';
-        case 4: return 'bg-red-50 text-red-700 ring-red-600/10';
+        case 0: return 'bg-gray-100 text-gray-600 ring-gray-600/10'; // None - gray
+        case 1: return 'bg-gray-100 text-gray-600 ring-gray-600/10'; // Waiting - gray
+        case 2: return 'bg-yellow-50 text-yellow-700 ring-yellow-600/20 border border-yellow-200'; // InProgress - yellow
+        case 3: return 'bg-green-50 text-green-700 ring-green-600/20'; // Completed - green
+        case 4: return 'bg-red-50 text-red-700 ring-red-600/10'; // Cancelled - red
         default: return 'bg-gray-50 text-gray-600 ring-gray-500/10';
     }
 };
@@ -473,26 +554,70 @@ const loadWinners = async (officeId) => {
 
 const handleStartQurea = async () => {
     if (!selectedOffice.value) return;
+    
+    const status = selectedOffice.value.status;
+    
+    // First check if winners exist - if yes, route to results page
+    try {
+        const res = await api.getOfficeWinners(selectedOffice.value.id);
+        if (res.data?.object !== null && res.data?.object !== undefined) {
+            router.push(`/qurea/${selectedOffice.value.id}`);
+            return;
+        }
+    } catch (e) {
+        console.error('Error checking winners:', e);
+    }
+    
+    // Check status before starting
+    if (status === 2) { // InProgress
+        router.push(`/qurea/${selectedOffice.value.id}`);
+        return;
+    }
+    
+    if (status === 3) { // Completed
+        // Navigate to results page
+        router.push(`/qurea/${selectedOffice.value.id}`);
+        return;
+    }
+    
+    if (status === 4) { // Cancelled
+        showAlert('لا يمكن بدء القرعة لأنها ملغاة', 'error', 'خطأ');
+        return;
+    }
+    
+    // Only allow starting if status is None (0) or Waiting (1)
+    if (status !== 0 && status !== 1) {
+        showAlert('حالة المكتب غير صالحة لبدء القرعة', 'warning', 'تحذير');
+        return;
+    }
+    
     processing.value = true;
     try {
         await api.startQurea(selectedOffice.value.id);
-      const res = await api.getOfficeWinners(selectedOffice.value.id);
-        if (res.data?.msg === 'لم يتم تنفيذ القرعة الالكترونية للمكتب') {
-            processing.value = false;
-
-            alert('pleas wait untill the the qurea is finished');
+        
+        // Refresh office data to get updated status
+        await loadOfficesAndStation();
+        
+        // Check if qurea is in progress or completed
+        const updatedOffice = offices.value.find(o => o.id === selectedOffice.value.id);
+        if (updatedOffice) {
+            selectedOffice.value = updatedOffice;
+            
+            if (updatedOffice.status === 2) { // InProgress
+                // Navigate to qurea page to watch the process
+                router.push(`/qurea/${selectedOffice.value.id}`);
+            } else if (updatedOffice.status === 3) { // Completed
+                // Navigate to results
+                router.push(`/qurea/${selectedOffice.value.id}`);
+            }
         }
-
-        if(res.data?.object !== null){
-        router.push(`/qurea/${selectedOffice.value.id}`);
-        }
+        
         processing.value = false;
     } catch (e) {
         console.error(e);
         processing.value = false;
         alert('حدث خطأ أثناء بدء القرعة');
     }
-    // Navigate to Qurea page with the office ID
 };
 
 const handleLogout = () => {

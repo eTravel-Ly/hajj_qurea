@@ -1,6 +1,7 @@
 <template>
-  <div class="min-h-screen flex items-center justify-center bg-gray-100">
-    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 transform transition-all hover:scale-[1.01]">
+  <div class="min-h-screen flex items-center justify-center bg-gray-100 relative" style="background-image: url('/3_Banner_8b649a21ad.png'); background-size: cover; background-position: center; background-repeat: no-repeat;">
+    <div class="absolute inset-0 bg-black/30"></div>
+    <div class="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 transform transition-all hover:scale-[1.01] relative z-10">
       <div class="text-center mb-8">
         <h2 class="text-3xl font-bold text-gray-800">حجاج</h2>
         <p class="text-gray-500 mt-2">تسجيل الدخول للمنصة</p>

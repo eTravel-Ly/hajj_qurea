@@ -11,7 +11,7 @@ export default {
         secondary: '#D8A663',
       },
       fontFamily: {
-        sans: ['JannatLT', 'sans-serif'],
+        sans: ['The Year of Handicrafts', 'JannatLT', 'sans-serif'],
       },
     },
   },

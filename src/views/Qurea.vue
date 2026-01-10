@@ -9,12 +9,7 @@
             class="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-colors"
             :title="sidebarVisible ? 'إخفاء الشريط الجانبي' : 'إظهار الشريط الجانبي'"
           >
-            <svg v-if="sidebarVisible" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-            <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <img src="/sidebar-right.png" alt="Sidebar" class="h-5 w-5" />
           </button>
           <!-- <img src="/logo-icon.png" class="h-8 opacity-80" /> -->
           <div>
@@ -35,9 +30,7 @@
         </div>
         
         <button @click="handleLogout" class="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-          </svg>
+          <img src="/logout-02.png" alt="Logout" class="h-5 w-5" />
         </button>
       </header>
 
@@ -122,7 +115,7 @@
           <div class="flex-grow flex flex-col items-center justify-center mb-3">
             <div class="bg-[#DCB278] rounded-[40px] p-[12px] mb-4 shadow-2xl border-[12px] border-white">
               <div class="bg-gradient-to-br rounded-[28px] h-[120px] min-w-[650px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-                <p class="text-[120px] font-bold text-white tracking-wider">{{ lotteryNumber || 4795 }}</p>
+                <p class="text-[120px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
               </div>
             </div>
 
@@ -139,7 +132,7 @@
                         class="text-xl font-bold text-gray-800 transition-all duration-75"
                         :class="isDrawing ? 'animate-pulse' : ''"
                       >
-                        {{ isDrawing ? (animatedPilgrimName || '---') : (currentPilgrim?.name || 'ايهاب البهلول فرج القيزاني')}}
+                        {{ isDrawing ? (animatedPilgrimName || 'لا يوجد حاج') : (currentPilgrim?.name || 'لا يوجد حاج')}}
                       </p>
                       <p v-if="!isDrawing && currentPilgrim?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentPilgrim.nationalId }}</p>
                     </div>
@@ -154,7 +147,7 @@
                         class="text-xl font-bold text-gray-800 transition-all duration-75"
                         :class="isDrawing ? 'animate-pulse' : ''"
                       >
-                        {{ isDrawing ? (animatedCompanionName || '---') : (currentCompanion?.name || 'ايهاب البهلول فرج القيزاني') }}
+                        {{ isDrawing ? (animatedCompanionName || '---') : (currentCompanion?.name || 'لا يوجد مرافق') }}
                       </p>
                       <p v-if="!isDrawing && currentCompanion?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentCompanion.nationalId }}</p>
                     </div>
@@ -228,7 +221,7 @@
           </div> -->
 
           <!-- Bottom Action Bar -->
-          <div class="sticky bottom-0 flex justify-between items-center bg-[#025446] rounded-xl p-3 shadow-lg z-30 mt-auto">
+          <div class="sticky bottom-0 flex justify-between items-center bg-[#005045] rounded-xl p-3 shadow-lg z-30 mt-auto">
             <!-- Center Selector  -->
             <div class="relative">
               <select 
@@ -247,11 +240,17 @@
               </div>
             </div>
 
+            <!-- Middle Image -->
+            <div class="flex-1 flex justify-center items-center">
+              <img src="/image 6.png" alt="Decoration" class="h-full w-[72px] object-contain" />
+            </div>
+
             <!-- Start Lottery Button -->
             <button     
               @click="handleStartLottery"
               :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown"
               class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              style="font-family: 'Somar Sans', sans-serif;"
             >
               <svg v-if="!isDrawing" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
@@ -290,6 +289,7 @@ const animatedCompanionName = ref('');
 const isDrawing = ref(false);
 const winnersQueue = ref([]);
 const currentWinnerIndex = ref(-1);
+const cachedRegisterNames = ref([]);
 const officeCardsContainer = ref(null);
 const officeScrollLeft = ref(0);
 const canScrollRight = ref(false);
@@ -503,14 +503,19 @@ const handleStartLottery = async () => {
   animatedCompanionName.value = '';
   
   try {
-    // Fetch registers for name animation
+    // Fetch registers for name animation - only once on first call
     let registerNames = [];
-    try {
-      const registersRes = await api.getRegisters(currentOffice.value.id, 1, 100);
-      const registersData = registersRes.data?.object || [];
-      registerNames = Array.isArray(registersData) ? registersData : (registersData.items || registersData.list || []);
-    } catch (e) {
-      console.warn('Could not fetch registers for animation', e);
+    if (cachedRegisterNames.value.length === 0) {
+      try {
+        const registersRes = await api.getOfficeWinners(currentOffice.value.id);
+        const registersData = registersRes.data?.object || [];
+        registerNames = Array.isArray(registersData) ? registersData : (registersData.items || registersData.list || []);
+        cachedRegisterNames.value = registerNames; // Cache for future use
+      } catch (e) {
+        console.warn('Could not fetch registers for animation', e);
+      }
+    } else {
+      registerNames = cachedRegisterNames.value; // Use cached data
     }
     
     // Simulate lottery drawing animation
@@ -523,19 +528,13 @@ const handleStartLottery = async () => {
     if (registerNames.length > 0) {
       namePool = registerNames.map(r => r?.name).filter(Boolean);
     } else {
-      namePool = ['محمد أحمد علي', 'عبدالله حسن محمد', 'خالد سعيد إبراهيم', 'عمر فتحي محمود', 'يوسف ناصر سالم', 'أحمد محمود حسن', 'علي يوسف إبراهيم', 'حسن خالد سعيد'];
-    }
-    
-    // Ensure we have names to animate
-    if (namePool.length === 0) {
-      namePool = ['---'];
-    }
-    
+      namePool = ['لا يوجد فائز'];
+    }    
     drawingInterval = setInterval(() => {
       frameCount++;
       
-      // Animate lottery number
-      lotteryNumber.value = Math.floor(Math.random() * maxNumber) + 1;
+      // Animate lottery number 
+      lotteryNumber.value = Math.floor(Math.random() * (999999 - 10000 + 1)) + 10000;
       
       // Animate names - rapid cycling like the number (change every frame for fast animation)
       const randomPilgrimIndex = Math.floor(Math.random() * namePool.length);
@@ -574,13 +573,10 @@ const showCurrentWinner = () => {
       name: winner.hajj || '---',
       nationalId: null
     };
-    currentCompanion.value = {
-      name: winner.companionHajj || '---',
+    currentCompanion.value = winner.companionHajj ? {
+      name: winner.companionHajj,
       nationalId: null
-    };
-    
-    // Refresh office data
-    loadOffices();
+    } : null;
   }
 };
 
@@ -677,6 +673,7 @@ watch(() => route.params.officeId, async (newOfficeId) => {
     // Reset winners queue when changing offices
     winnersQueue.value = [];
     currentWinnerIndex.value = -1;
+    cachedRegisterNames.value = []; // Clear cached register names for new office
     
     // Scroll to current office
     setTimeout(() => {

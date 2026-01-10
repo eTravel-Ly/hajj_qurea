@@ -1,6 +1,40 @@
 @import "tailwindcss";
 
-/* JannatLT Font Faces */
+/* Somar Sans Font Faces */
+@font-face {
+  font-family: "Somar Sans";
+  src: url("/fonts/Somar Sans/Fonts/OTF/Standard/SomarSans-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Somar Sans";
+  src: url("/fonts/Somar Sans/Fonts/OTF/Standard/SomarSans-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Somar Sans";
+  src: url("/fonts/Somar Sans/Fonts/OTF/Standard/SomarSans-Medium.otf") format("opentype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* The Year of Handicrafts Font Faces */
+@font-face {
+  font-family: "The Year of Handicrafts";
+  src: url("/fonts/TheYearofHandicrafts-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* JannatLT Font Faces (Fallback) */
 @font-face {
   font-family: "JannatLT";
   src: url("/fonts/a-JannatLT-Regular.ttf") format("truetype");
@@ -20,10 +54,15 @@
 @theme {
   --color-primary: #03AA77;
   --color-secondary: #D8A663;
-  --font-sans: "JannatLT", "Tajawal", sans-serif;
+  --font-sans: "The Year of Handicrafts", "JannatLT", "Tajawal", sans-serif;
+}
+
+body,
+html,
+#app {
+  font-family: "The Year of Handicrafts", "JannatLT", "Tajawal", sans-serif !important;
 }
 
 body {
-  font-family: var(--font-sans);
   background-color: #F9FAFB;
 }
