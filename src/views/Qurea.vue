@@ -82,26 +82,42 @@
         <!-- Center Content -->
         <div class="flex-grow flex flex-col overflow-y-auto p-6 relative min-h-0">
           <!-- Current Office Card - Top Left -->
-          <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-48 bg-white rounded-xl border-2 border-primary/30 p-3 shadow-lg">
-            <h4 class="font-bold text-base text-gray-800 mb-3">{{ currentOffice.name }}</h4>
-            <div class="space-y-2">
-              <div class="flex items-center gap-2">
-                <p class="text-xs text-gray-500">الحصة الإجمالية:</p>
-                <p class="text-lg font-bold text-gray-800">{{ currentOffice.quota }} حاج</p>
+          <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-40 bg-white rounded-xl border-2 border-primary/30 p-2 shadow-lg">
+            <h4 class="font-bold text-sm text-gray-800 mb-2">{{ currentOffice.name }}</h4>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-1.5">
+                <p class="text-[10px] text-gray-500">الحصة الإجمالية:</p>
+                <p class="text-sm font-bold text-gray-800">{{ currentOffice.quota }} حاج</p>
               </div>
-              <div class="flex items-center gap-2">
-                <p class="text-xs text-gray-500">تم إختيار:</p>
-                <p class="text-lg font-bold text-gray-800">{{ currentOffice.selectedCount || 0 }} حاج</p>
+              <div class="flex items-center gap-1.5">
+                <p class="text-[10px] text-gray-500">تم إختيار:</p>
+                <p class="text-sm font-bold text-gray-800">{{ currentOffice.selectedCount || 0 }} حاج</p>
               </div>
-              <div class="flex items-center gap-2 mt-3">
+              <div class="flex flex-col gap-1.5 mt-2">
                 <span class="text-xs text-gray-500">الحالة:</span>
-                <span 
-                  class="w-2 h-2 rounded-full"
-                  :class="getStatusDotColor(currentOffice.status)"
-                ></span>  
-                <span class="text-xs font-bold" :class="getStatusTextColor(currentOffice.status)">
-                  {{ getStatusText(currentOffice.status) }}
-                </span>
+                <!-- Progress bar when lottery is running -->
+                <div v-if="isLotteryRunning" class="w-full">
+                  <div class="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
+                    <div 
+                      class="h-full transition-all duration-300 ease-out rounded-full"
+                      :style="{ width: lotteryProgressPercentage + '%', backgroundColor: '#005045' }"
+                    ></div>
+                  </div>
+                  <div class="flex justify-between items-center mt-0.5">
+                    <span class="text-[10px] font-bold" style="color: #005045">{{ lotteryProgressPercentage }}%</span>
+                    <span class="text-[10px] text-gray-500">{{ currentWinnerIndex + 1 }} / {{ winnersQueue.length }}</span>
+                  </div>
+                </div>
+                <!-- Normal status when lottery is not running -->
+                <div v-else class="flex items-center gap-2">
+                  <span 
+                    class="w-2 h-2 rounded-full"
+                    :class="getStatusDotColor(currentOffice.status)"
+                  ></span>  
+                  <span class="text-xs font-bold" :class="getStatusTextColor(currentOffice.status)">
+                    {{ getStatusText(currentOffice.status) }}
+                  </span>
+                </div>
               </div>
             </div>
           </div>
@@ -111,47 +127,56 @@
             <h1 class="text-xl font-bold text-gray-800">قرعة الحج لموسم 1447 هجري - 2026 ميلادي</h1>
           </div>
 
-          <!-- Large Lottery Number Display -->
-          <div class="flex-grow flex flex-col items-center justify-center mb-3">
-            <div class="bg-[#DCB278] rounded-[40px] p-[12px] mb-4 shadow-2xl border-[12px] border-white">
-              <div class="bg-gradient-to-br rounded-[28px] h-[120px] min-w-[650px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-                <p class="text-[120px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
+          <!-- Side-by-Side Layout: Names Card (Left) and Number Card (Right) -->
+          <div class="flex-grow flex flex-row items-center justify-center gap-8 mb-3 px-6">
+            <!-- Winners List - Left Side -->
+            <div class="w-[650px] h-[400px]">
+              <div class="bg-white rounded-xl p-6 h-full flex flex-col">
+                <!-- Scrollable Winners List -->
+                <div ref="winnersListContainer" class="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
+                  <div 
+                    v-for="(winner, index) in winnersQueue.slice(0, currentWinnerIndex + 1)" 
+                    :key="index"
+                    class="py-3 px-4 transition-all duration-500"
+                    :class="[
+                      index === currentWinnerIndex ? 'bg-[#D8A663]/10 rounded-lg animate-fade-in' : '',
+                      'opacity-100'
+                    ]"
+                  >
+                    <div class="flex items-start gap-6 text-right">
+                      <!-- Number -->
+                      <div class="flex-shrink-0">
+                        <div class="text-base font-bold text-[#D8A663] mb-1">رقم:</div>
+                        <div class="text-lg font-bold text-gray-800">{{ winner.registerNumber || '-' }}</div>
+                      </div>
+                      
+                      <!-- Hajj Name -->
+                      <div class="flex-1">
+                        <div class="text-base font-bold text-[#D8A663] mb-1">الحاج:</div>
+                        <div class="text-lg font-bold text-gray-800">{{ winner.hajj || 'لا يوجد' }}</div>
+                      </div>
+                      
+                      <!-- Morafeq -->
+                      <div class="flex-1">
+                        <div class="text-base font-bold text-[#D8A663] mb-1">المرافق:</div>
+                        <div class="text-lg font-bold text-gray-600">{{ winner.companionHajj || 'لا يوجد' }}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Empty State -->
+                  <div v-if="winnersQueue.length === 0" class="flex items-center justify-center h-full text-gray-400 text-lg">
+                    لا يوجد فائزين بعد
+                  </div>
+                </div>
               </div>
             </div>
 
-            <!-- Pilgrim and Companion Cards -->
-            <div class="w-full max-w-4xl mb-4 mt-6">
-              <div class="bg-white rounded-xl border-2 border-primary/30 p-6">
-                <div class="grid grid-cols-2" style="gap: calc(var(--spacing) * 19);">
-                  <!-- Pilgrim Card - Right side in RTL -->
-                  <div>
-                    <h3 class="text-base font-bold text-[#D8A663] mb-4 text-right">الحاج</h3>
-                    <div class="text-right">
-                      <p 
-                        :key="isDrawing ? animatedPilgrimName : currentPilgrim?.name"
-                        class="text-xl font-bold text-gray-800 transition-all duration-75"
-                        :class="isDrawing ? 'animate-pulse' : ''"
-                      >
-                        {{ isDrawing ? (animatedPilgrimName || 'لا يوجد حاج') : (currentPilgrim?.name || 'لا يوجد حاج')}}
-                      </p>
-                      <p v-if="!isDrawing && currentPilgrim?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentPilgrim.nationalId }}</p>
-                    </div>
-                  </div>
-
-                  <!-- Companion Card - Left side in RTL -->
-                  <div>
-                    <h3 class="text-base font-bold text-[#D8A663] mb-4 text-right">المرافق</h3>
-                    <div class="text-right">
-                      <p 
-                        :key="isDrawing ? animatedCompanionName : currentCompanion?.name"
-                        class="text-xl font-bold text-gray-800 transition-all duration-75"
-                        :class="isDrawing ? 'animate-pulse' : ''"
-                      >
-                        {{ isDrawing ? (animatedCompanionName || '---') : (currentCompanion?.name || 'لا يوجد مرافق') }}
-                      </p>
-                      <p v-if="!isDrawing && currentCompanion?.nationalId" class="text-sm text-gray-500 mt-2 font-mono">{{ currentCompanion.nationalId }}</p>
-                    </div>
-                  </div>
+            <!-- Lottery Number Card - Right Side -->
+            <div class="flex items-center justify-center">
+              <div class="bg-[#DCB278] rounded-[20px] p-[8px] shadow-2xl border-[8px] border-white">
+                <div class="bg-gradient-to-br rounded-[12px] w-[518px] h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+                  <p class="text-[90px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
                 </div>
               </div>
             </div>
@@ -248,14 +273,14 @@
             <!-- Start Lottery Button -->
             <button     
               @click="handleStartLottery"
-              :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown"
+              :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)"
               class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style="font-family: 'Somar Sans', sans-serif;"
             >
-              <svg v-if="!isDrawing" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg v-if="!isDrawing && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
-              <span v-if="isDrawing" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
+              <span v-if="isDrawing || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
               <span>{{ isDrawing ? 'جاري السحب...' : lotteryButtonText }}</span>
             </button>
           </div>
@@ -266,7 +291,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue';
+import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { logout } from '../services/auth';
@@ -294,6 +319,19 @@ const officeCardsContainer = ref(null);
 const officeScrollLeft = ref(0);
 const canScrollRight = ref(false);
 const sidebarVisible = ref(true);
+const winnersListContainer = ref(null);
+
+// Register numbers for animation
+const registerNumbers = ref([]);
+const currentRegisterIndex = ref(0);
+const currentRegisterPage = ref(1);
+const isLoadingRegisters = ref(false);
+
+// Animation settings
+//adding emojis to see where the animation config is this is me not ai 😊(😶‍🌫️😶‍🌫️😶‍🌫️😪😪😪😪😫😫😫😫😝😝😝🙃🙃😯😯😌😛😜)
+
+const animationDuration = ref(1); // Total animation duration in seconds
+const numberDisplayDuration = ref(0.05); // How long each number shows in seconds (10ms = 0.01s)
 
 let timeInterval = null;
 let drawingInterval = null;
@@ -335,14 +373,35 @@ const allWinnersShown = computed(() => {
   return winnersQueue.value.length > 0 && currentWinnerIndex.value >= winnersQueue.value.length - 1;
 });
 
+// Lottery progress percentage
+const lotteryProgressPercentage = computed(() => {
+  if (winnersQueue.value.length === 0) return 0;
+  // currentWinnerIndex is -1 initially, so we add 1 to get the count of shown winners
+  const shownWinners = currentWinnerIndex.value + 1;
+  return Math.round((shownWinners / winnersQueue.value.length) * 100);
+});
+
+// Check if lottery is running
+const isLotteryRunning = computed(() => {
+  return winnersQueue.value.length > 0 && (isDrawing.value || currentWinnerIndex.value >= 0);
+});
+
+// Button disabled state - only clickable when starting fresh or all winners shown
+const isButtonDisabled = computed(() => {
+  // Disabled while drawing or showing winners
+  return isDrawing.value || (winnersQueue.value.length > 0 && currentWinnerIndex.value < winnersQueue.value.length - 1 && currentWinnerIndex.value >= 0);
+});
+
 // Button text based on state
 const lotteryButtonText = computed(() => {
   if (winnersQueue.value.length === 0) {
     return 'بدأ القرعة';
+  } else if (currentWinnerIndex.value >= 0 && currentWinnerIndex.value < winnersQueue.value.length - 1) {
+    return 'جاري السحب...';
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
     return `تم عرض جميع الفائزين (${winnersQueue.value.length})`;
   } else {
-    return `الفائز التالي (${currentWinnerIndex.value + 2}/${winnersQueue.value.length})`;
+    return 'بدأ عرض النتائج';
   }
 });
 
@@ -462,7 +521,31 @@ const handleCenterChange = () => {
   }
 };
 
-// Start lottery
+// Fetch register numbers for animation
+const fetchRegisterPage = async (pageNumber) => {
+  if (!currentOffice.value || isLoadingRegisters.value) return;
+  
+  try {
+    isLoadingRegisters.value = true;
+    const res = await api.getRegisters(currentOffice.value.id, pageNumber, 100);
+    const list = res.data?.object?.list || [];
+    
+    if (Array.isArray(list) && list.length > 0) {
+      registerNumbers.value = list;
+      return true;
+    } else {
+      console.warn('No register numbers found for page:', pageNumber);
+      return false;
+    }
+  } catch (error) {
+    console.error('Error fetching register numbers:', error);
+    return false;
+  } finally {
+    isLoadingRegisters.value = false;
+  }
+};
+
+// Start lottery - Auto loop through all winners
 const handleStartLottery = async () => {
   if (!currentOffice.value || isDrawing.value) return;
   
@@ -480,21 +563,62 @@ const handleStartLottery = async () => {
       }
       
       winnersQueue.value = winners;
-      currentWinnerIndex.value = 0;
+      currentWinnerIndex.value = -1; 
+      
+      // Cache register names for animation
+      cachedRegisterNames.value = winners;
+      
+      // Reset register numbers for animation
+      registerNumbers.value = [];
+      currentRegisterIndex.value = 0;
+      currentRegisterPage.value = 1;
+      
+      // Start the auto-loop
+      showNextWinnerInLoop();
     } catch (error) {
       console.error('Error loading winners:', error);
       alert('حدث خطأ في تحميل نتائج القرعة');
       return;
     }
-  } else {
-    // Already have winners move to next winner
-    currentWinnerIndex.value++;
+  } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
+    // If at the end, restart from beginning
+    currentWinnerIndex.value = -1;
     
-    // Check if we've reached the end
-    if (currentWinnerIndex.value >= winnersQueue.value.length) {
-      currentWinnerIndex.value = winnersQueue.value.length - 1; // Stay at last
-      return;
+    // Reset register numbers for animation
+    registerNumbers.value = [];
+    currentRegisterIndex.value = 0;
+    currentRegisterPage.value = 1;
+    
+    showNextWinnerInLoop();
+  } else {
+    // Continue from where we left off
+    showNextWinnerInLoop();
+  }
+};
+
+// Show next winner in automatic loop
+const showNextWinnerInLoop = async () => {
+  // Check if we've reached the end
+  if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
+    return; // Stop at the end
+  }
+  
+  // DON'T increment here - wait until animation completes
+  
+  // Pre-fetch register numbers if not loaded
+  if (registerNumbers.value.length === 0) {
+    const success = await fetchRegisterPage(currentRegisterPage.value);
+    if (!success) {
+      console.error('Failed to load register numbers, using random animation');
+      // Fallback to random numbers if API fails
     }
+  }
+  
+  // Pre-fetch next page if we're running low
+  if (registerNumbers.value.length > 0 && currentRegisterIndex.value >= registerNumbers.value.length - 20) {
+    fetchRegisterPage(currentRegisterPage.value + 1).catch(() => {
+      // Silently fail, we'll wrap around if needed
+    });
   }
   
   // Start animation
@@ -503,62 +627,105 @@ const handleStartLottery = async () => {
   animatedCompanionName.value = '';
   
   try {
-    // Fetch registers for name animation - only once on first call
-    let registerNames = [];
-    if (cachedRegisterNames.value.length === 0) {
-      try {
-        const registersRes = await api.getOfficeWinners(currentOffice.value.id);
-        const registersData = registersRes.data?.object || [];
-        registerNames = Array.isArray(registersData) ? registersData : (registersData.items || registersData.list || []);
-        cachedRegisterNames.value = registerNames; // Cache for future use
-      } catch (e) {
-        console.warn('Could not fetch registers for animation', e);
-      }
+    // Prepare name arrays for animation
+    let namePool = [];
+    if (cachedRegisterNames.value.length > 0) {
+      namePool = cachedRegisterNames.value.map(r => r?.hajj).filter(Boolean);
     } else {
-      registerNames = cachedRegisterNames.value; // Use cached data
+      namePool = ['لا يوجد فائز'];
     }
     
     // Simulate lottery drawing animation
-    const maxNumber = currentOffice.value.quota || 1000;
     let frameCount = 0;
-    const totalFrames = 60; // 1 second at 60fps
+    const intervalMs = numberDisplayDuration.value * 1000; // Convert seconds to milliseconds
+    const totalFrames = Math.floor(animationDuration.value / numberDisplayDuration.value); // Calculate how many numbers to show
     
-    // Prepare name arrays for animation
-    let namePool = [];
-    if (registerNames.length > 0) {
-      namePool = registerNames.map(r => r?.name).filter(Boolean);
-    } else {
-      namePool = ['لا يوجد فائز'];
-    }    
     drawingInterval = setInterval(() => {
       frameCount++;
       
-      // Animate lottery number 
-      lotteryNumber.value = Math.floor(Math.random() * (999999 - 10000 + 1)) + 10000;
-      
-      // Animate names - rapid cycling like the number (change every frame for fast animation)
-      const randomPilgrimIndex = Math.floor(Math.random() * namePool.length);
-      const randomCompanionIndex = Math.floor(Math.random() * namePool.length);
-      animatedPilgrimName.value = namePool[randomPilgrimIndex] || '---';
-      animatedCompanionName.value = namePool[randomCompanionIndex] || '---';
+      // Animate lottery number using register numbers from API
+      if (registerNumbers.value.length > 0) {
+        // Use register number from current position (with wraparound)
+        const index = currentRegisterIndex.value % registerNumbers.value.length;
+        const currentRegisterNum = registerNumbers.value[index] || null;
+        lotteryNumber.value = currentRegisterNum || '----';
+        
+        // Find matching winner/register entry by registerNumber to link name
+        if (currentRegisterNum && cachedRegisterNames.value.length > 0) {
+          const matchingEntry = cachedRegisterNames.value.find(
+            entry => String(entry?.registerNumber) === String(currentRegisterNum)
+          );
+          
+          if (matchingEntry) {
+            // Use the linked name from the matching entry
+            animatedPilgrimName.value = matchingEntry.hajj || '---';
+            animatedCompanionName.value = matchingEntry.companionHajj || '---';
+          } else {
+            // If no match found, use random from pool
+            const randomPilgrimIndex = Math.floor(Math.random() * namePool.length);
+            const randomCompanionIndex = Math.floor(Math.random() * namePool.length);
+            animatedPilgrimName.value = namePool[randomPilgrimIndex] || '---';
+            animatedCompanionName.value = namePool[randomCompanionIndex] || '---';
+          }
+        } else {
+          // Fallback to random names if no register number or no cached names
+          const randomPilgrimIndex = Math.floor(Math.random() * namePool.length);
+          const randomCompanionIndex = Math.floor(Math.random() * namePool.length);
+          animatedPilgrimName.value = namePool[randomPilgrimIndex] || '---';
+          animatedCompanionName.value = namePool[randomCompanionIndex] || '---';
+        }
+        
+        currentRegisterIndex.value++;
+        
+        // Check if we've cycled through current page
+        if (currentRegisterIndex.value >= registerNumbers.value.length * 2) {
+          // Move to next page
+          currentRegisterPage.value++;
+          currentRegisterIndex.value = 0;
+          // Trigger fetch for next page (non-blocking)
+          fetchRegisterPage(currentRegisterPage.value).catch(() => {
+            // If fetch fails, reset to page 1
+            currentRegisterPage.value = 1;
+            fetchRegisterPage(1);
+          });
+        }
+      } else {
+        // Fallback to random numbers if API failed
+        lotteryNumber.value = Math.floor(Math.random() * (999999 - 10000 + 1)) + 10000;
+        // Use random names when using random numbers
+        const randomPilgrimIndex = Math.floor(Math.random() * namePool.length);
+        const randomCompanionIndex = Math.floor(Math.random() * namePool.length);
+        animatedPilgrimName.value = namePool[randomPilgrimIndex] || '---';
+        animatedCompanionName.value = namePool[randomCompanionIndex] || '---';
+      }
       
       if (frameCount >= totalFrames) {
         clearInterval(drawingInterval);
+        
+        // NOW increment the winner index AFTER animation completes
+        currentWinnerIndex.value++;
+        
         // Show winner from queue
         showCurrentWinner();
         isDrawing.value = false;
         // Clear animated names
         animatedPilgrimName.value = '';
         animatedCompanionName.value = '';
+        
+        // Auto-continue to next winner after 2 seconds
+        setTimeout(() => {
+          if (currentWinnerIndex.value < winnersQueue.value.length - 1) {
+            showNextWinnerInLoop();
+          }
+        }, 2000);
       }
-    }, 16); // ~60fps
+    }, intervalMs); // Use configurable interval
     
   } catch (error) {
     console.error('Error during animation:', error);
     isDrawing.value = false;
     animatedPilgrimName.value = '';
     animatedCompanionName.value = '';
-    alert('حدث خطأ أثناء عرض القرعة');
   }
 };
 
@@ -675,10 +842,31 @@ watch(() => route.params.officeId, async (newOfficeId) => {
     currentWinnerIndex.value = -1;
     cachedRegisterNames.value = []; // Clear cached register names for new office
     
+    // Reset register numbers for animation
+    registerNumbers.value = [];
+    currentRegisterIndex.value = 0;
+    currentRegisterPage.value = 1;
+    
     // Scroll to current office
     setTimeout(() => {
       scrollToSelectedOffice();
     }, 100);
+  }
+});
+
+// Watch for new winners and auto-scroll to bottom
+watch(currentWinnerIndex, async () => {
+  if (winnersListContainer.value && currentWinnerIndex.value >= 0) {
+    await nextTick();
+    // Wait a bit more for animations to settle
+    setTimeout(() => {
+      if (winnersListContainer.value) {
+        winnersListContainer.value.scrollTo({
+          top: winnersListContainer.value.scrollHeight,
+          behavior: 'smooth'
+        });
+      }
+    }, 500);
   }
 });
 
@@ -700,5 +888,20 @@ onUnmounted(() => {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.5s ease-out;
 }
 </style>

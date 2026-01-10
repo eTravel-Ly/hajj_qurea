@@ -359,7 +359,7 @@ const activeTab = ref('registers'); // 'registers' | 'winners'
 const registers = ref([]);
 const loadingRegisters = ref(false);
 const currentPage = ref(1);
-const pageSize = ref(20);
+const pageSize = ref(1000);
 
 // Winners
 const winners = ref([]);

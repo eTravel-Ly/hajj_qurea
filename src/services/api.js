@@ -22,7 +22,7 @@ export default {
     },
 
     // Get Registers for a specific office (with pagination)
-    getRegisters(officeCrId, pageNumber = 1, pageSize = 20) {
+    getRegisters(officeCrId, pageNumber = 1, pageSize = 1000) {
         return apiClient.get(`/admin/QureaElectronics/Registes/${officeCrId}`, {
             params: {
                 PageNumber: pageNumber,
