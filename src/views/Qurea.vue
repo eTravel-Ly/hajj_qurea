@@ -178,7 +178,7 @@
                 
                 <!-- Total Count Footer -->
                 <div v-if="winnersQueue.length > 0" class="border-t border-gray-200 pt-3 mt-3 flex-shrink-0 relative z-10">
-                  <div class="flex justify-between items-center text-right">
+                  <div class="flex justify-start items-center text-right gap-3">
                     <span class="text-sm font-bold text-gray-800">الفائزين:</span>
                     <span class="text-lg font-bold text-[#005045]">{{ currentWinnerIndex + 1 }} من {{ winnersQueue.length }}</span>
                   </div>
@@ -940,8 +940,8 @@ onUnmounted(() => {
 
 /* TOP LEFT */
 .corner-tl {
-  top: 0;
-  left: -5px;
+  top: 5px;
+  left: 2px;
 }
 
 .corner-tl::before {
@@ -952,8 +952,8 @@ onUnmounted(() => {
 
 /* TOP RIGHT */
 .corner-tr {
-  top: -5px;
-  right: 0;
+  top: 2px;
+  right: 5px;
 }
 
 .corner-tr::before {
@@ -964,8 +964,8 @@ onUnmounted(() => {
 
 /* BOTTOM RIGHT */
 .corner-br {
-  bottom: 0;
-  right: -5px;
+  bottom: 5px;
+  right: 2px;
 }
 
 .corner-br::before {
@@ -976,8 +976,8 @@ onUnmounted(() => {
 
 /* BOTTOM LEFT */
 .corner-bl {
-  bottom: -5px;
-  left: 0;
+  bottom: 2px;
+  left: 5px;
 }
 
 .corner-bl::before {
