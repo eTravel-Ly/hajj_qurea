@@ -82,7 +82,7 @@
         <!-- Center Content -->
         <div class="flex-grow flex flex-col overflow-y-auto p-6 relative min-h-0">
           <!-- Current Office Card - Top Left -->
-          <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-40 bg-white rounded-xl border-2 border-primary/30 p-2 shadow-lg">
+          <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-40 bg-white rounded-xl border-2 border-[#D8A663] p-2 shadow-lg">
             <h4 class="font-bold text-sm text-gray-800 mb-2">{{ currentOffice.name }}</h4>
             <div class="space-y-1.5">
               <div class="flex items-center gap-1.5">
@@ -131,9 +131,15 @@
           <div class="flex-grow flex flex-row items-center justify-center gap-8 mb-3 px-6">
             <!-- Winners List - Left Side -->
             <div class="w-[650px] h-[400px]">
-              <div class="bg-white rounded-xl p-6 h-full flex flex-col">
+              <div class="bg-white rounded-xl p-6 h-full flex flex-col relative">
+                <!-- Corner Ornaments -->
+                <span class="corner-ornament corner-tl"></span>
+                <span class="corner-ornament corner-tr"></span>
+                <span class="corner-ornament corner-br"></span>
+                <span class="corner-ornament corner-bl"></span>
+                
                 <!-- Scrollable Winners List -->
-                <div ref="winnersListContainer" class="flex-1 overflow-y-auto space-y-4 scrollbar-hide">
+                <div ref="winnersListContainer" class="flex-1 overflow-y-auto space-y-4 scrollbar-hide relative z-10">
                   <div 
                     v-for="(winner, index) in winnersQueue.slice(0, currentWinnerIndex + 1)" 
                     :key="index"
@@ -171,7 +177,7 @@
                 </div>
                 
                 <!-- Total Count Footer -->
-                <div v-if="winnersQueue.length > 0" class="border-t border-gray-200 pt-3 mt-3 flex-shrink-0">
+                <div v-if="winnersQueue.length > 0" class="border-t border-gray-200 pt-3 mt-3 flex-shrink-0 relative z-10">
                   <div class="flex justify-between items-center text-right">
                     <span class="text-sm font-bold text-gray-800">الفائزين:</span>
                     <span class="text-lg font-bold text-[#005045]">{{ currentWinnerIndex + 1 }} من {{ winnersQueue.length }}</span>
@@ -911,5 +917,72 @@ onUnmounted(() => {
 
 .animate-fade-in {
   animation: fade-in 0.5s ease-out;
+}
+
+/* Corner Ornament Styles */
+.corner-ornament {
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* One PNG per corner using pseudo-element */
+.corner-ornament::before {
+  content: "";
+  position: absolute;
+  width: 90px;
+  height: 90px;
+  background: url("/Group.png") no-repeat center;
+  background-size: contain;
+}
+
+/* TOP LEFT */
+.corner-tl {
+  top: 0;
+  left: -5px;
+}
+
+.corner-tl::before {
+  top: 0;
+  left: 0;
+  transform: rotate(90deg);
+}
+
+/* TOP RIGHT */
+.corner-tr {
+  top: -5px;
+  right: 0;
+}
+
+.corner-tr::before {
+  top: 0;
+  right: 0;
+  transform: rotate(180deg);
+}
+
+/* BOTTOM RIGHT */
+.corner-br {
+  bottom: 0;
+  right: -5px;
+}
+
+.corner-br::before {
+  bottom: 0;
+  right: 0;
+  transform: rotate(270deg);
+}
+
+/* BOTTOM LEFT */
+.corner-bl {
+  bottom: -5px;
+  left: 0;
+}
+
+.corner-bl::before {
+  bottom: 0;
+  left: 0;
+  transform: rotate(0deg);
 }
 </style>
