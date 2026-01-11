@@ -3,23 +3,29 @@ import { authState } from '../services/auth';
 import Login from '../views/Login.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Qurea from '../views/Qurea.vue';
+
+// Secret key - you can move this to environment variable
+const VALID_ROUTE_KEY = import.meta.env.VITE_ROUTE_KEY || '72054865-9308-4095-9950-323c22221980';
 const routes = [
     {
         path: '/',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { requiresAuth: true }
+        meta: { requiresKey: true , requiresAuth: true }
+        // meta: { requiresAuth: true }
     },
     {
         path: '/login',
         name: 'Login',
-        component: Login
+        component: Login,
+        meta: { requiresKey: true , requiresAuth: false }
     },
     {
         path: '/qurea/:officeId',
         name: 'Qurea',
         component: Qurea,
-        meta: { requiresAuth: true }
+        meta: { requiresKey: true , requiresAuth: true }
+        // meta: { requiresAuth: true }
 
     }
 ];
@@ -30,6 +36,17 @@ const router = createRouter({
 });
 
 router.beforeEach((to, from, next) => {
+    // Check for key requirement
+    if (to.meta.requiresKey) {
+        const routeKey = to.query.key;
+        if (!routeKey || routeKey !== VALID_ROUTE_KEY) {
+            // Redirect to external URL if key is missing/invalid
+            window.location.href = 'http://google.com/';
+            return;
+        }
+    }
+
+    // Check for auth requirement
     if (to.meta.requiresAuth && !authState.isAuthenticated) {
         next('/login');
     } else {
