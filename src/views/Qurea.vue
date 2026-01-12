@@ -36,12 +36,35 @@
 
       <!-- Main Content -->
       <main class="flex-grow flex overflow-hidden" style="height: calc(100vh - 4rem);">
+        <!-- Clickable area for remaining 20% to close sidebar on mobile -->
+        <div 
+          v-if="sidebarVisible"
+          @click="toggleSidebar"
+          class="fixed inset-y-0 left-0 w-[20%] z-40 md:hidden bg-black/10 shadow-[4px_0_10px_rgba(0,0,0,0.3)]"
+        ></div>
+        
         <!-- Left Panel: Center Info -->
         <aside 
-          class="bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden"
-          :class="sidebarVisible ? 'w-80 border-l border-gray-200' : '!w-0 !p-0 !min-w-0 !max-w-0 border-0'"
+          class="bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden md:relative"
+          :class="[
+            sidebarVisible 
+              ? 'w-[80%] md:w-80 border-l border-gray-200 z-50 translate-x-0 opacity-100' 
+              : 'w-[80%] md:w-80 md:!w-0 translate-x-full md:translate-x-0 opacity-0 md:opacity-100 border-0 md:!p-0 md:!min-w-0 md:!max-w-0 pointer-events-none md:pointer-events-auto',
+            'fixed md:relative inset-y-0 right-0 md:inset-auto'
+          ]"
         >
-          <div v-show="sidebarVisible" class="flex flex-col h-full p-6">
+          <div v-show="sidebarVisible" class="flex flex-col h-full p-6 relative">
+            <!-- Close Button - Mobile Only -->
+            <!-- <button
+              @click="toggleSidebar"
+              class="md:hidden absolute top-4 right-4 z-10 p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-colors"
+              title="إغلاق"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button> -->
+            
             <!-- Offices List -->
             <div class="flex-1 overflow-y-auto min-h-0">
               <h3 class="text-lg font-bold text-gray-800 mb-3">المكاتب</h3>
@@ -128,9 +151,9 @@
           </div>
 
           <!-- Side-by-Side Layout: Names Card (Left) and Number Card (Right) -->
-          <div class="flex-grow flex flex-row items-center justify-center gap-8 mb-3 px-6">
+          <div class="flex-grow flex flex-col md:flex-row items-center justify-center gap-8 mb-3 px-6">
             <!-- Winners List - Left Side -->
-            <div class="w-[650px] h-[400px]">
+            <div class="w-[420px] md:w-[650px] h-[400px]">
               <div class="bg-white rounded-xl p-6 h-full flex flex-col relative">
                 <!-- Corner Ornaments -->
                 <span class="corner-ornament corner-tl"></span>
@@ -189,8 +212,8 @@
             <!-- Lottery Number Card - Right Side -->
             <div class="flex items-center justify-center">
               <div class="bg-[#DCB278] rounded-[20px] p-[8px] shadow-2xl border-[8px] border-white">
-                <div class="bg-gradient-to-br rounded-[12px] w-[518px] h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-                  <p class="text-[90px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
+                <div class="bg-gradient-to-br rounded-[12px] w-[320px] md:w-[518px] h-[110px] md:h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+                  <p class="text-[55px] md:text-[90px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
                 </div>
               </div>
             </div>

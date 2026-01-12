@@ -11,20 +11,20 @@ const routes = [
         path: '/',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { requiresKey: true , requiresAuth: true }
+        meta: { requiresKey: false , requiresAuth: false }
         // meta: { requiresAuth: true }
     },
     {
         path: '/login',
         name: 'Login',
         component: Login,
-        meta: { requiresKey: true , requiresAuth: false }
+        meta: { requiresKey: false , requiresAuth: false }
     },
     {
         path: '/qurea/:officeId',
         name: 'Qurea',
         component: Qurea,
-        meta: { requiresKey: true , requiresAuth: true }
+        meta: { requiresKey: false , requiresAuth: false }
         // meta: { requiresAuth: true }
 
     }
