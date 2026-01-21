@@ -364,6 +364,103 @@ const currentRegisterIndex = ref(0);
 const currentRegisterPage = ref(1);
 const isLoadingRegisters = ref(false);
 
+// Local Storage Key Prefix
+const STORAGE_KEY_PREFIX = 'qurea_state_';
+
+// Save state to local storage
+const saveState = () => {
+    if (!currentOffice.value || !currentOffice.value.id) return;
+    
+    const state = {
+        winners: winnersQueue.value,
+        currentIndex: currentWinnerIndex.value,
+        timestamp: new Date().getTime(),
+        officeStatus: currentOffice.value.status,
+        selectedCount: currentOffice.value.selectedCount
+    };
+    
+    localStorage.setItem(STORAGE_KEY_PREFIX + currentOffice.value.id, JSON.stringify(state));
+};
+
+// Load state from local storage
+const loadState = () => {
+    if (!currentOffice.value) return false;
+    
+    const saved = localStorage.getItem(STORAGE_KEY_PREFIX + currentOffice.value.id);
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            if (parsed.winners && Array.isArray(parsed.winners) && parsed.winners.length > 0) {
+                winnersQueue.value = parsed.winners;
+                currentWinnerIndex.value = parsed.currentIndex;
+                cachedRegisterNames.value = parsed.winners; // Restore cached names
+                
+                // Restore office status and count
+                if (parsed.officeStatus !== undefined) currentOffice.value.status = parsed.officeStatus;
+                if (parsed.selectedCount !== undefined) currentOffice.value.selectedCount = parsed.selectedCount;
+
+                // Update the office in the list as well to reflect status in sidebar/list
+                const officeInList = offices.value.find(o => String(o.id) === String(currentOffice.value.id));
+                if (officeInList) {
+                    if (parsed.officeStatus !== undefined) officeInList.status = parsed.officeStatus;
+                    if (parsed.selectedCount !== undefined) officeInList.selectedCount = parsed.selectedCount;
+                }
+                
+                // If we have winners, we should show the current winner immediately without animation
+                if (currentWinnerIndex.value >= 0) {
+                    showCurrentWinner();
+                    
+                    // Scroll to bottom of list
+                    nextTick(() => {
+                        if (winnersListContainer.value) {
+                            winnersListContainer.value.scrollTop = winnersListContainer.value.scrollHeight;
+                        }
+                    });
+
+                    // If not finished, RESUME loop
+                    if (currentWinnerIndex.value < winnersQueue.value.length - 1) {
+                        setTimeout(() => {
+                            showNextWinnerInLoop();
+                        }, 1000);
+                    }
+                }
+                return true;
+            }
+        } catch (e) {
+            console.error('Error loading saved state', e);
+        }
+    }
+    return false;
+};
+
+// Clear state 
+const clearState = () => {
+    if (!currentOffice.value) return;
+    localStorage.removeItem(STORAGE_KEY_PREFIX + currentOffice.value.id);
+};
+
+// Watchers to auto-save
+watch([winnersQueue, currentWinnerIndex], () => {
+    if (winnersQueue.value.length > 0) {
+        saveState();
+    }
+}, { deep: true });
+
+// Watch for office change to load state
+watch(currentOffice, (newVal) => {
+    if (newVal) {
+        // Reset state first
+        winnersQueue.value = [];
+        currentWinnerIndex.value = -1;
+        cachedRegisterNames.value = [];
+        lotteryNumber.value = null;
+        
+        // Try to load saved state
+        loadState();
+    }
+});
+
+
 // Animation settings
 //adding emojis to see where the animation config is this is me not ai 😊(😶‍🌫️😶‍🌫️😶‍🌫️😪😪😪😪😫😫😫😫😝😝😝🙃🙃😯😯😌😛😜)
 
@@ -602,6 +699,11 @@ const handleStartLottery = async () => {
       winnersQueue.value = winners;
       currentWinnerIndex.value = -1; 
       
+      // Update status to In Progress (2) and reset count
+      currentOffice.value.status = 2;
+      currentOffice.value.selectedCount = 0;
+      saveState(); // Save initial state
+      
       // Cache register names for animation
       cachedRegisterNames.value = winners;
       
@@ -618,15 +720,17 @@ const handleStartLottery = async () => {
       return;
     }
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
-    // If at the end, restart from beginning
-    currentWinnerIndex.value = -1;
-    
-    // Reset register numbers for animation
-    registerNumbers.value = [];
-    currentRegisterIndex.value = 0;
-    currentRegisterPage.value = 1;
-    
-    showNextWinnerInLoop();
+    // If at the end, make sure to ask before restarting
+    if (confirm('هل أنت متأكد من إعادة القرعة؟ سيتم عرض الأسماء من البداية.')) {
+        currentWinnerIndex.value = -1;
+        
+        // Reset register numbers for animation
+        registerNumbers.value = [];
+        currentRegisterIndex.value = 0;
+        currentRegisterPage.value = 1;
+        
+        showNextWinnerInLoop();
+    }
   } else {
     // Continue from where we left off
     showNextWinnerInLoop();
@@ -646,7 +750,6 @@ const showNextWinnerInLoop = async () => {
   if (registerNumbers.value.length === 0) {
     const success = await fetchRegisterPage(currentRegisterPage.value);
     if (!success) {
-      console.error('Failed to load register numbers, using random animation');
       // Fallback to random numbers if API fails
     }
   }
@@ -682,7 +785,7 @@ const showNextWinnerInLoop = async () => {
       
       // Animate lottery number using register numbers from API
       if (registerNumbers.value.length > 0) {
-        // Use register number from current position (with wraparound)
+        // Use register number from current position
         const index = currentRegisterIndex.value % registerNumbers.value.length;
         const currentRegisterNum = registerNumbers.value[index] || null;
         lotteryNumber.value = currentRegisterNum || '----';
@@ -781,6 +884,14 @@ const showCurrentWinner = () => {
       name: winner.companionHajj,
       nationalId: null
     } : null;
+
+    // Update selected count
+    currentOffice.value.selectedCount = currentWinnerIndex.value + 1;
+    
+    // Check if finished 
+    if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
+        currentOffice.value.status = 3;
+    }
   }
 };
 
@@ -794,8 +905,20 @@ const loadOffices = async () => {
     // Find current office
     currentOffice.value = offices.value.find(o => String(o.id) === String(route.params.officeId));
     
-    // Calculate selected counts (assuming we have this data from API)
+    // Calculate selected counts 
     offices.value.forEach(office => {
+      // Check local storage for saved status/count
+      const saved = localStorage.getItem(STORAGE_KEY_PREFIX + office.id);
+      if (saved) {
+        try {
+           const parsed = JSON.parse(saved);
+           if (parsed.officeStatus !== undefined) office.status = parsed.officeStatus;
+           if (parsed.selectedCount !== undefined) office.selectedCount = parsed.selectedCount;
+        } catch (e) {
+            // ignore error
+        }
+      }
+
       if (!office.selectedCount) {
         office.selectedCount = office.status === 3 ? office.quota : 0;
       }
@@ -861,28 +984,20 @@ onMounted(() => {
 });
 
 // Watch for office ID changes and reload data
+// Watch for office ID changes and reload data
 watch(() => route.params.officeId, async (newOfficeId) => {
   if (newOfficeId) {
     // Reload offices to get updated data
     await loadOffices();
     
     // Find and set current office
+    // This assignment will trigger the watch(currentOffice) which handles state reset and loading
     currentOffice.value = offices.value.find(o => String(o.id) === String(newOfficeId));
     
     // Reset lottery data
     lotteryNumber.value = null;
     currentPilgrim.value = null;
     currentCompanion.value = null;
-    
-    // Reset winners queue when changing offices
-    winnersQueue.value = [];
-    currentWinnerIndex.value = -1;
-    cachedRegisterNames.value = []; // Clear cached register names for new office
-    
-    // Reset register numbers for animation
-    registerNumbers.value = [];
-    currentRegisterIndex.value = 0;
-    currentRegisterPage.value = 1;
     
     // Scroll to current office
     setTimeout(() => {
