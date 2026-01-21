@@ -472,6 +472,24 @@ const loadOfficesAndStation = async () => {
         
         const rawOffices = officesRes.data?.object || [];
         const newOfficeList = Array.isArray(rawOffices) ? rawOffices : (rawOffices.list || []);
+        
+        // Sync with local storage
+        const STORAGE_KEY_PREFIX = 'qurea_state_';
+        
+        newOfficeList.forEach(office => {
+            const saved = localStorage.getItem(STORAGE_KEY_PREFIX + office.id);
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    if (parsed.officeStatus !== undefined) office.status = parsed.officeStatus;
+                    // Dashboard uses 'doneCount', storage has 'selectedCount'
+                    if (parsed.selectedCount !== undefined) office.doneCount = parsed.selectedCount;
+                } catch (e) {
+                    // ignore
+                }
+            }
+        });
+        
         offices.value = newOfficeList;
 
         // Update selected office reference if it exists
