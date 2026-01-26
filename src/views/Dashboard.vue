@@ -160,33 +160,7 @@
 
               <!-- Primary Action -->
               <div class="flex flex-col gap-2">
-                  <!-- Test Popup Buttons -->
-                  <div class="flex gap-2 mb-2">
-                      <button 
-                          @click="showAlert('هذه رسالة خطأ تجريبية', 'error', 'خطأ')"
-                          class="bg-red-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-red-600 transition-colors"
-                      >
-                          اختبار خطأ
-                      </button>
-                      <button 
-                          @click="showAlert('هذه رسالة تحذير تجريبية', 'warning', 'تحذير')"
-                          class="bg-yellow-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-yellow-600 transition-colors"
-                      >
-                          اختبار تحذير
-                      </button>
-                      <button 
-                          @click="showAlert('هذه رسالة نجاح تجريبية', 'success', 'نجاح')"
-                          class="bg-green-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-green-600 transition-colors"
-                      >
-                          اختبار نجاح
-                      </button>
-                      <button 
-                          @click="showAlert('هذه رسالة معلومات تجريبية', 'info', 'معلومات')"
-                          class="bg-blue-500 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-blue-600 transition-colors"
-                      >
-                          اختبار معلومات
-                      </button>
-                  </div>
+
                   
                   <button 
                     v-if="selectedOffice.status === 0 || selectedOffice.status === 1"
