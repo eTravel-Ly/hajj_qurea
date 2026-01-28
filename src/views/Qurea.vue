@@ -194,12 +194,12 @@
                 </div>
                 
                 <!-- Total Count Footer -->
-                <div v-if="winnersQueue.length > 0" class="border-t border-gray-200 pt-3 mt-3 flex-shrink-0 relative z-10">
-                  <div class="flex justify-start items-center text-right gap-72 mr-4">
-                    <span class="text-sm font-bold text-gray-800">الفائزين:</span>
-                    <span class="text-lg font-bold text-[#005045]">{{ currentWinnerIndex + 1 }} من {{ winnersQueue.length }}</span>
-                  </div>
-                </div>
+                <!-- <div v-if="winnersQueue.length > 0" class="border-t border-gray-200 pt-3 mt-3 flex-shrink-0 relative z-10">
+                  <div class="flex justify-start items-center text-right gap-72 mr-4"> -->
+                    <!-- <span class="text-sm font-bold text-gray-800">الفائزين:</span>
+                    <span class="text-lg font-bold text-[#005045]">{{ currentWinnerIndex + 1 }} من {{ winnersQueue.length }}</span> -->
+                  <!-- </div> -->
+                <!-- </div> -->
               </div>
             </div>
 
