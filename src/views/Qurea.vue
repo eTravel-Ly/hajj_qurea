@@ -73,25 +73,19 @@
                   v-for="office in offices" 
                   :key="office.id"
                   @click="selectOffice(office.id)"
-                  class="bg-white rounded-lg border-2 p-3 transition-all cursor-pointer"
+                  class="bg-white rounded-lg border-2 p-3 transition-all cursor-pointer h-[110px] flex flex-col"
                   :class="String(office.id) === String(route.params.officeId) ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20' : 'border-gray-200'"
                 >
-                  <h4 class="font-bold text-sm text-gray-800 mb-2">{{ office.name }}</h4>
-                  <div class="space-y-1">
+                  <h4 class="font-bold text-base text-gray-800 mb-2">{{ office.name }}</h4>
+                  
+                  <!-- Status section pushed to bottom -->
+                  <div class="mt-auto">
                     <div class="flex items-center gap-2">
-                      <p class="text-xs text-gray-500">الحصة:</p>
-                      <p class="text-sm font-bold text-gray-800">{{ office.quota }} حاج</p>
-                    </div>
-                    <div class="flex items-center gap-2">
-                      <p class="text-xs text-gray-500">تم إختيار:</p>
-                      <p class="text-sm font-bold text-gray-800">{{ office.selectedCount || 0 }} حاج</p>
-                    </div>
-                    <div class="flex items-center gap-2 mt-2">
                       <span 
                         class="w-2 h-2 rounded-full"
                         :class="getStatusDotColor(office.status)"
                       ></span>  
-                      <span class="text-xs font-bold" :class="getStatusTextColor(office.status)">
+                      <span class="text-sm font-bold" :class="getStatusTextColor(office.status)">
                         {{ getStatusText(office.status) }}
                       </span>
                     </div>
@@ -108,14 +102,14 @@
           <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-40 bg-white rounded-xl border-2 border-[#D8A663] p-2 shadow-lg">
             <h4 class="font-bold text-sm text-gray-800 mb-2">{{ currentOffice.name }}</h4>
             <div class="space-y-1.5">
-              <div class="flex items-center gap-1.5">
+              <!-- <div class="flex items-center gap-1.5">
                 <p class="text-[10px] text-gray-500">الحصة الإجمالية:</p>
                 <p class="text-sm font-bold text-gray-800">{{ currentOffice.quota }} حاج</p>
-              </div>
-              <div class="flex items-center gap-1.5">
+              </div> -->
+              <!-- <div class="flex items-center gap-1.5">
                 <p class="text-[10px] text-gray-500">تم إختيار:</p>
                 <p class="text-sm font-bold text-gray-800">{{ currentOffice.selectedCount || 0 }} حاج</p>
-              </div>
+              </div> -->
               <div class="flex flex-col gap-1.5 mt-2">
                 <span class="text-xs text-gray-500">الحالة:</span>
                 <!-- Progress bar when lottery is running -->
@@ -128,7 +122,7 @@
                   </div>
                   <div class="flex justify-between items-center mt-0.5">
                     <span class="text-[10px] font-bold" style="color: #005045">{{ lotteryProgressPercentage }}%</span>
-                    <span class="text-[10px] text-gray-500">{{ currentWinnerIndex + 1 }} / {{ winnersQueue.length }}</span>
+                    <!-- <span class="text-[10px] text-gray-500">{{ currentWinnerIndex + 1 }} / {{ winnersQueue.length }}</span> -->
                   </div>
                 </div>
                 <!-- Normal status when lottery is not running -->
@@ -449,6 +443,23 @@ watch([winnersQueue, currentWinnerIndex], () => {
 // Watch for office change to load state
 watch(currentOffice, (newVal) => {
     if (newVal) {
+        // Clear any running animation intervals first
+        if (drawingInterval) {
+            clearInterval(drawingInterval);
+            drawingInterval = null;
+        }
+        
+        // Clear any pending next winner timeout
+        if (nextWinnerTimeout) {
+            clearTimeout(nextWinnerTimeout);
+            nextWinnerTimeout = null;
+        }
+        
+        // Reset animation state
+        isDrawing.value = false;
+        animatedPilgrimName.value = '';
+        animatedCompanionName.value = '';
+        
         // Reset state first
         winnersQueue.value = [];
         currentWinnerIndex.value = -1;
@@ -469,6 +480,7 @@ const numberDisplayDuration = ref(0.05); // How long each number shows in second
 
 let timeInterval = null;
 let drawingInterval = null;
+let nextWinnerTimeout = null;
 
 const handleLogout = () => {
     logout();
@@ -853,7 +865,7 @@ const showNextWinnerInLoop = async () => {
         animatedCompanionName.value = '';
         
         // Auto-continue to next winner after 2 seconds
-        setTimeout(() => {
+        nextWinnerTimeout = setTimeout(() => {
           if (currentWinnerIndex.value < winnersQueue.value.length - 1) {
             showNextWinnerInLoop();
           }
@@ -1029,6 +1041,9 @@ onUnmounted(() => {
   }
   if (drawingInterval) {
     clearInterval(drawingInterval);
+  }
+  if (nextWinnerTimeout) {
+    clearTimeout(nextWinnerTimeout);
   }
 });
 </script>
