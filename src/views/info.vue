@@ -148,23 +148,7 @@
               </div>
             </div>
             
-            <!-- Cards Block    -->
-            <div class="w-[434px] flex flex-col gap-7">
-               <div class="flex gap-7">
-                 <div class="flex-1 bg-white rounded-2xl p-6 flex flex-col justify-between items-end h-[110px]">
-                    <span class="text-[12px] font-medium text-[#2B3032]">نسبة الإنجاز</span>
-                    <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.completionRate }}%</div>
-                 </div>
-                 <div class="flex-1 bg-white rounded-2xl p-6 flex flex-col justify-between items-end h-[110px]">
-                    <span class="text-[12px] font-medium text-[#2B3032]">الحصة الإجمالية للمركز</span>
-                    <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.totalQuota }}</div>
-                 </div>
-               </div>
-               <div class="bg-white rounded-2xl p-6 flex flex-col justify-between items-end h-[112px]">
-                 <span class="text-[12px] font-medium text-[#2B3032]">إحصائيات اخرى</span>
-                 <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.otherStats }}</div>
-               </div>
-            </div>
+
           </div>
 
         </div>
@@ -196,12 +180,9 @@ export default {
               registeredUsersCount: 0,
               maleCount: 0,
               femaleCount: 0,
-              singleCount: 0,
-              companionCount: 0,
               totalPilgrims: 0,
-              completionRate: 0,
-              totalQuota: 0,
-              otherStats: 0
+              numberOfHajjajOver65YearsOfAge: 0,
+              totalCompletionRateForAllCenters: 0
             },
             // Donut Chart Data
             donutSeries: [],
@@ -336,16 +317,11 @@ export default {
                 officesFinishedCount: data.numberOfOfficesCompleted || 0,
                 totalWinnersCount: data.numberOfWinners || 0,
                 registeredUsersCount: data.numberOfRegistered || 0,
-                numberOfHajjajOver65YearsOfAge: data.numberOfHajjajOver65YearsOfAge || 0,
-                totalCompletionRateForAllCenters: data.totalCompletionRateForAllCenters || 0,
+                totalPilgrims: data.numberOfHajjaj || 0,
                 maleCount: data.numberOfMen || 0,
                 femaleCount: data.numberOfWomen || 0,
-                singleCount: (data.numberOfHajjaj || 0) - (data.numberOfCompanions || 0),
-                companionCount: data.numberOfCompanions || 0,
-                totalPilgrims: data.numberOfHajjaj || 0,
-                completionRate: data.totalCompletionRateForAllCenters || 0,
-                totalQuota: data.totalQuotaForAllCenters || 0,
-                otherStats: data.numberOfHajjajOver65YearsOfAge || 0
+                numberOfHajjajOver65YearsOfAge: data.numberOfHajjajOver65YearsOfAge || 0,
+                totalCompletionRateForAllCenters: data.totalCompletionRateForAllCenters || 0
               };
 
               // Map Donut Chart (distributionByCenter)
@@ -401,12 +377,9 @@ export default {
             registeredUsersCount: 64152,
             maleCount: 1800,
             femaleCount: 1200,
-            singleCount: 2500,
-            companionCount: 500,
             totalPilgrims: 3000,
-            completionRate: 1,
-            totalQuota: 5,
-            otherStats: 764
+            numberOfHajjajOver65YearsOfAge: 112562,
+            totalCompletionRateForAllCenters: 100
           };
           this.setDummyCharts();
         },
