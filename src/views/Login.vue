@@ -52,7 +52,7 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { login } from '../services/auth';
+import { login, parseJwt } from '../services/auth';
 
 const router = useRouter();
 const username = ref('qurea01');
@@ -64,8 +64,21 @@ const handleLogin = async () => {
   loading.value = true;
   error.value = '';
   try {
-    await login(username.value, password.value);
-    router.push('/');
+    const data = await login(username.value, password.value);
+    
+    // Role-based redirection logic
+    if (data && data.access_token) {
+      const decoded = parseJwt(data.access_token);
+      const roles = decoded?.realm_access?.roles || [];
+      
+      if (roles.includes('qurea-role-indicators')) {
+        router.push('/info');
+      } else {
+        router.push('/');
+      }
+    } else {
+      router.push('/');
+    }
   } catch (e) {
     error.value = 'فشل تسجيل الدخول. يرجى التحقق من البيانات';
     console.error(e);

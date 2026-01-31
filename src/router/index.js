@@ -3,6 +3,7 @@ import { authState } from '../services/auth';
 import Login from '../views/Login.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Qurea from '../views/Qurea.vue';
+import info from '../views/info.vue';
 
 // Secret key - you can move this to environment variable
 const VALID_ROUTE_KEY = import.meta.env.VITE_ROUTE_KEY || '72054865-9308-4095-9950-323c22221980';
@@ -11,22 +12,28 @@ const routes = [
         path: '/',
         name: 'Dashboard',
         component: Dashboard,
-        meta: { requiresKey: false , requiresAuth: false }
+        meta: { requiresKey: false, requiresAuth: false }
         // meta: { requiresAuth: true }
     },
     {
         path: '/login',
         name: 'Login',
         component: Login,
-        meta: { requiresKey: false , requiresAuth: false }
+        meta: { requiresKey: false, requiresAuth: false }
     },
     {
         path: '/qurea/:officeId',
         name: 'Qurea',
         component: Qurea,
-        meta: { requiresKey: false , requiresAuth: false }
+        meta: { requiresKey: false, requiresAuth: false }
         // meta: { requiresAuth: true }
 
+    },
+    {
+        path: '/info',
+        name: 'info',
+        component: info,
+        meta: { requiresKey: false, requiresAuth: false }
     }
 ];
 
