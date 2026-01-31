@@ -74,33 +74,46 @@
              <div class="w-[600px] min-w-[400px] bg-white rounded-2xl p-6 flex flex-col gap-4 flex-grow">
                 <!-- Text Header Row -->
                 <div class="flex justify-between items-center h-[28px] shrink-0">
-                  <button class="flex items-center gap-1 px-2 py-1 bg-[#23282D0D] rounded-lg h-[28px] w-[76px] justify-center">
+                  <!-- <button class="flex items-center gap-1 px-2 py-1 bg-[#23282D0D] rounded-lg h-[28px] w-[76px] justify-center">
                     <div class="flex items-center justify-center w-5 h-5 gap-1 shrink-0">
                        <svg class="w-4 h-4 opacity-40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
                     </div>
                     <span class="text-[12px] text-[#2B3032]">طرابلس</span>
-                  </button>
+                  </button> -->
                   <h3 class="text-sm font-semibold text-[#2B3032] flex-grow text-right">التوزيع حسب المكتب</h3>
                 </div>
 
                 <!-- Frame -->
-                <div class="flex flex-1 items-center justify-end px-5 gap-10 border-none">
+                <div class="flex flex-1 items-center justify-center px-5 gap-10 border-none">
                   <!-- Donut Chart -->
-                  <div class="w-[120px] h-[120px] shrink-0">
-                     <apexchart type="donut" width="100%" height="100%" :options="donutOptions" :series="donutSeries"></apexchart>
+                  <div class="w-[140px] h-[140px] shrink-0">
+                     <apexchart type="donut" width="140" height="140" :options="paginatedChartOptions" :series="paginatedSeries"></apexchart>
                   </div>
 
                   <!-- Legend Card -->
-                  <div class="flex-1 flex flex-col gap-3 max-w-[352px]">
-                    <div v-for="(label, index) in donutOptions.labels" :key="label" 
-                         class="flex items-center justify-between h-[22px]">
-                      <!-- Tag -->
-                      <div class="flex items-center gap-2">
-                        <span class="text-[12px] text-[#2B3032]">{{ label }}</span>
-                        <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: donutOptions.colors[index] }"></span>
+                  <div class="flex-1 flex flex-col max-w-[352px] self-stretch py-2">
+                    <div class="flex-1 flex flex-col gap-3">
+                      <div v-for="(item, idx) in paginatedLegend" :key="item.index" 
+                           class="flex items-center justify-between h-[22px]">
+                        <!-- Tag -->
+                        <div class="flex items-center gap-2">
+                          <span class="text-[12px] text-[#2B3032]">{{ item.label }}</span>
+                          <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: donutOptions.colors[idx] || '#eee' }"></span>
+                        </div>
+                        <!-- Percentage -->
+                        <span class="text-[12px] text-[#2B3032] font-['Inter'] min-w-[35px] text-left">{{ item.percentage }}%</span>
                       </div>
-                      <!-- Percentage -->
-                      <span class="text-[12px] text-[#2B3032] font-['Inter'] min-w-[35px] text-left">{{ donutSeries[index] }}%</span>
+                    </div>
+                    
+                    <!-- Pagination Controls -->
+                    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 pt-4 mt-auto border-t border-gray-50">
+                       <button @click="legendPage--" :disabled="legendPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                       </button>
+                       <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ legendPage }} / {{ totalPages }}</span>
+                       <button @click="legendPage++" :disabled="legendPage >= totalPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                       </button>
                     </div>
                   </div>
                 </div>
@@ -140,11 +153,23 @@
 
           <!-- Bottom Block  -->
           <div class="flex gap-7 h-[280px]">
-            <!-- Bar Chart Block  -->
+            <!-- Bar Chart Block -->
             <div class="flex-1 bg-white rounded-2xl p-6 flex flex-col gap-4">
-              <h3 class="text-sm font-semibold text-[#2B3032] text-right">عدد الفائزين في كل مكتب</h3>
+              <div class="flex justify-between items-center mb-2">
+                <!-- Bar Chart Pagination -->
+                <div v-if="totalBarPages > 1" class="flex items-center gap-4">
+                   <button @click="barPage--" :disabled="barPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                   </button>
+                   <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ barPage }} / {{ totalBarPages }}</span>
+                   <button @click="barPage++" :disabled="barPage >= totalBarPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                   </button>
+                </div>
+                <h3 class="text-sm font-semibold text-[#2B3032] text-right">عدد الفائزين في كل مكتب</h3>
+              </div>
               <div class="flex-1 overflow-hidden">
-                <apexchart type="bar" height="100%" width="100%" :options="barOptions" :series="barSeries"></apexchart>
+                <apexchart :key="barPage" type="bar" height="100%" width="100%" :options="paginatedBarOptions" :series="paginatedBarSeries"></apexchart>
               </div>
             </div>
             
@@ -185,6 +210,7 @@ export default {
               totalCompletionRateForAllCenters: 0
             },
             // Donut Chart Data
+            legendPage: 1,
             donutSeries: [],
             donutOptions: {
               chart: {
@@ -194,7 +220,7 @@ export default {
                 }
               },
               labels: [],
-              colors: ['#2B3032', '#A1E3CB', '#B1E3FF', '#A8C5DA', '#015647', '#9FD4CA', '#FFCF9F'],
+              colors: ['#2B3032', '#A1E3CB', '#B1E3FF', '#A8C5DA', '#015647', '#9FD4CA', '#FFCF9F', '#7DD3FC', '#F9A8D4', '#BEF264', '#FCA5A5', '#D8B4FE'],
               stroke: {
                 show: false
               },
@@ -221,16 +247,8 @@ export default {
               }
             },
             // Bar Chart Data
-            barSeries: [
-              {
-                name: 'رجال',
-                data: []
-              },
-              {
-                name: 'نساء',
-                data: []
-              }
-            ],
+            barPage: 1,
+            barSeries: [],
             barOptions: {
               chart: {
                 type: 'bar',
@@ -298,6 +316,63 @@ export default {
             }
         }
     },
+    computed: {
+      totalPages() {
+        return Math.ceil((this.donutOptions.labels?.length || 0) / 5);
+      },
+      paginatedLegend() {
+        if (!this.donutOptions.labels || this.donutOptions.labels.length === 0) return [];
+        const total = this.donutSeries.reduce((a, b) => a + b, 0) || 1;
+        const start = (this.legendPage - 1) * 5;
+        const end = start + 5;
+        return this.donutOptions.labels.slice(start, end).map((label, idx) => {
+          const val = this.donutSeries[start + idx] || 0;
+          return {
+            label,
+            index: start + idx,
+            percentage: ((val / total) * 100).toFixed(1)
+          };
+        });
+      },
+      paginatedSeries() {
+        const start = (this.legendPage - 1) * 5;
+        const series = this.donutSeries.slice(start, start + 5);
+        return series;
+      },
+      paginatedChartOptions() {
+        const start = (this.legendPage - 1) * 5;
+        const labels = this.donutOptions.labels.slice(start, start + 5);
+        // Always use the first 5 colors for consistency across pages
+        const colors = this.donutOptions.colors.slice(0, 5);
+        return {
+          ...this.donutOptions,
+          labels,
+          colors
+        };
+      },
+      totalBarPages() {
+        return Math.ceil((this.barOptions.xaxis?.categories?.length || 0) / 7);
+      },
+      paginatedBarSeries() {
+        const start = (this.barPage - 1) * 7;
+        if (!this.barSeries || this.barSeries.length === 0) return [];
+        return this.barSeries.map(s => ({
+          ...s,
+          data: s.data.slice(start, start + 7)
+        }));
+      },
+      paginatedBarOptions() {
+        const start = (this.barPage - 1) * 7;
+        const categories = this.barOptions.xaxis.categories.slice(start, start + 7);
+        return {
+          ...this.barOptions,
+          xaxis: {
+            ...this.barOptions.xaxis,
+            categories
+          }
+        };
+      }
+    },
     async mounted() {
       await this.fetchIndicators();
     },
@@ -306,6 +381,8 @@ export default {
           this.isLoading = true;
           this.error = null;
           this.showErrorNotify = false;
+          this.legendPage = 1;
+          this.barPage = 1;
           try {
             const response = await api.getIndicators();
             const data = response.data?.object;
@@ -333,7 +410,8 @@ export default {
                   labels: keys
                 };
               } else {
-                this.setDummyCharts();
+                this.donutSeries = [];
+                this.donutOptions = { ...this.donutOptions, labels: [] };
               }
 
               // Map Bar Chart (numberOfWinnersInEachCenter)
@@ -356,10 +434,9 @@ export default {
                   }
                 };
               } else {
-                this.setDummyCharts();
+                this.barSeries = [{ name: 'الفائزين (إجمالي)', data: [] }];
+                this.barOptions = { ...this.barOptions, xaxis: { ...this.barOptions.xaxis, categories: [] } };
               }
-            } else {
-              this.setDummyFull();
             }
           } catch (err) {
             console.error("Error fetching indicators:", err);
@@ -384,10 +461,10 @@ export default {
           this.setDummyCharts();
         },
         setDummyCharts() {
-          this.donutSeries = [38, 22, 30, 10];
+          this.donutSeries = [30, 20, 15, 10, 8, 5, 4, 3, 2, 1, 1, 1];
           this.donutOptions = {
             ...this.donutOptions,
-            labels: ['حي الأندلس', 'قرجي', 'أبوسليم', 'سوق الجمعة']
+            labels: ['جردس الجراري', 'البياضة', 'سوسة', 'شحات المدينة', 'البيضاء المدينة', 'بطة', 'الجهاد', 'سلنطة', 'مسة', 'مراوة', 'قندولة', 'زاوية العرقوب']
           };
           this.barSeries = [
             { name: 'رجال', data: [15, 20, 10, 18, 12, 8] },
