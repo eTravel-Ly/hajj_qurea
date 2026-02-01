@@ -10,8 +10,8 @@ const VALID_ROUTE_KEY = import.meta.env.VITE_ROUTE_KEY || '72054865-9308-4095-99
 const routes = [
     {
         path: '/',
-        name: 'Dashboard',
-        component: Dashboard,
+        name: 'login',
+        component: Login,
         meta: { requiresKey: false, requiresAuth: false }
         // meta: { requiresAuth: true }
     },
@@ -22,10 +22,16 @@ const routes = [
         meta: { requiresKey: false, requiresAuth: false }
     },
     {
+        path: '/dashboard',
+        name: 'Dashboard',
+        component: Dashboard,
+        meta: { requiresKey: false, requiresAuth: true }
+    },
+    {
         path: '/qurea/:officeId',
         name: 'Qurea',
         component: Qurea,
-        meta: { requiresKey: false, requiresAuth: false }
+        meta: { requiresKey: false, requiresAuth: true }
         // meta: { requiresAuth: true }
 
     },
@@ -33,7 +39,7 @@ const routes = [
         path: '/info',
         name: 'info',
         component: info,
-        meta: { requiresKey: false, requiresAuth: false }
+        meta: { requiresKey: false, requiresAuth: true }
     }
 ];
 
