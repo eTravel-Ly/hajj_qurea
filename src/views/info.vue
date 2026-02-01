@@ -17,7 +17,7 @@
           </div>
         </div>
         
-        <!-- Global Stats Placeholder (Matching Qurea) -->
+        <!-- Global Stats Placeholder -->
         <div class="hidden md:flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
             <div class="flex items-center gap-2">
                <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
@@ -35,7 +35,7 @@
 
       <!-- Main Content -->
       <main class="flex-grow flex overflow-hidden" style="height: calc(100vh - 4rem);">
-        <!-- Right Sidebar (Toggleable) -->
+        <!-- Right Sidebar-->
         <aside 
           class="bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden md:relative"
           :class="[
@@ -67,7 +67,7 @@
                 </div>
               </router-link> -->
 
-              <!-- Statistics Link (Active) -->
+              <!-- Statistics Link  -->
               <div class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg bg-[#03AA770D] transition-colors">
                 <span class="text-[14px] text-[#03AA77]" style="font-family: 'The Year of Handicrafts'">الإحصائيات</span>
                 <div class="w-5 h-5 flex items-center justify-center">

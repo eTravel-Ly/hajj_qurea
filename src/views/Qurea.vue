@@ -302,9 +302,10 @@
             </div>
 
             <!-- Start Lottery Button -->
+             <!--    for button 
+               :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" -->
             <button     
               @click="handleStartLottery"
-              :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)"
               class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style="font-family: 'Somar Sans', sans-serif;"
             >
@@ -318,6 +319,14 @@
         </div>
       </main>
   
+    <!-- Alert Modal -->
+    <AlertModal
+      :isVisible="alertModal.isVisible"
+      :type="alertModal.type"
+      :title="alertModal.title"
+      :message="alertModal.message"
+      @close="closeAlert"
+    />
   </div>
 </template>
 
@@ -326,6 +335,7 @@ import { ref, onMounted, onUnmounted, computed, watch, nextTick } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { logout } from '../services/auth';
+import AlertModal from '../components/AlertModal.vue';
 
 const route = useRoute();
 const router = useRouter();
@@ -360,6 +370,27 @@ const isLoadingRegisters = ref(false);
 
 // Local Storage Key Prefix
 const STORAGE_KEY_PREFIX = 'qurea_state_';
+
+const alertModal = ref({
+    isVisible: false,
+    type: 'info', // 'error', 'warning', 'success', 'info'
+    title: 'تنبيه',
+    message: ''
+});
+
+// Alert Functions
+const showAlert = (message, type = 'info', title = 'تنبيه') => {
+    alertModal.value = {
+        isVisible: true,
+        type,
+        title,
+        message
+    };
+};
+
+const closeAlert = () => {
+    alertModal.value.isVisible = false;
+};
 
 // Save state to local storage
 const saveState = () => {
@@ -704,7 +735,7 @@ const handleStartLottery = async () => {
       const winners = res.data?.object || [];
       
       if (!Array.isArray(winners) || winners.length === 0) {
-        alert('لا توجد نتائج قرعة');
+        showAlert('لا توجد نتائج قرعة', 'alert', 'تنبيه');
         return;
       }
       
@@ -728,7 +759,7 @@ const handleStartLottery = async () => {
       showNextWinnerInLoop();
     } catch (error) {
       console.error('Error loading winners:', error);
-      alert('حدث خطأ في تحميل نتائج القرعة');
+      showAlert('حدث خطأ في تحميل نتائج القرعة', 'alert', 'تنبيه');
       return;
     }
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {

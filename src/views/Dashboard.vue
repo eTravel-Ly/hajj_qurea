@@ -561,7 +561,10 @@ const handleStartQurea = async () => {
     
     if (status === 2) { // InProgress
         processing.value = false;
-        showAlert('القرعة قيد التنفيذ حاليا', 'alert', 'تنبيه');
+        //test so route to qurea page
+         showAlert('test  route to qurea page', 'alert', 'تنبيه');
+
+        router.push(`/qurea/${officeId}`);
         return;
     }
 
@@ -598,10 +601,11 @@ const handleStartQurea = async () => {
             
             if(updatedOffice.status === 2){
                 processing.value = false;
-                showAlert('القرعة قيد التنفيذ حاليا', 'alert', 'تنبيه');
+                showAlert('test  route to qurea page', 'alert', 'تنبيه');
+                router.push(`/qurea/${officeId}`);
                 return;
             }
-            
+
             if (updatedOffice.status === 3) {
                 // Navigate to qurea page to watch/see results
                 router.push(`/qurea/${officeId}`);
