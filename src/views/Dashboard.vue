@@ -547,68 +547,71 @@ const loadWinners = async (officeId) => {
 const handleStartQurea = async () => {
     if (!selectedOffice.value) return;
     
-    const status = selectedOffice.value.status;
+    processing.value = true;
     
-    // First check if winners exist - if yes, route to results page
+    // Refresh to get latest status and data
     try {
-        const res = await api.getOfficeWinners(selectedOffice.value.id);
-        if (res.data?.object !== null && res.data?.object !== undefined) {
-            router.push(`/qurea/${selectedOffice.value.id}`);
-            return;
-        }
+        await loadOfficesAndStation();
     } catch (e) {
-        console.error('Error checking winners:', e);
+        console.error('Error refreshing data:', e);
     }
     
-    // Check status before starting
+    const status = selectedOffice.value.status;
+    const officeId = selectedOffice.value.id;
+    
     if (status === 2) { // InProgress
-        router.push(`/qurea/${selectedOffice.value.id}`);
+        processing.value = false;
+        showAlert('القرعة قيد التنفيذ حاليا', 'alert', 'تنبيه');
         return;
     }
-    
-    if (status === 3) { // Completed
-        // Navigate to results page
-        router.push(`/qurea/${selectedOffice.value.id}`);
+
+    // If status is Completed (3), navigate to qurea page
+    if (status === 3) {
+        processing.value = false;
+        router.push(`/qurea/${officeId}`);
         return;
     }
     
     if (status === 4) { // Cancelled
+        processing.value = false;
         showAlert('لا يمكن بدء القرعة لأنها ملغاة', 'error', 'خطأ');
         return;
     }
     
     // Only allow starting if status is None (0) or Waiting (1)
     if (status !== 0 && status !== 1) {
+        processing.value = false;
         showAlert('حالة المكتب غير صالحة لبدء القرعة', 'warning', 'تحذير');
         return;
     }
     
-    processing.value = true;
     try {
-        await api.startQurea(selectedOffice.value.id);
+        await api.startQurea(officeId);
         
         // Refresh office data to get updated status
         await loadOfficesAndStation();
         
         // Check if qurea is in progress or completed
-        const updatedOffice = offices.value.find(o => o.id === selectedOffice.value.id);
+        const updatedOffice = offices.value.find(o => o.id === officeId);
         if (updatedOffice) {
             selectedOffice.value = updatedOffice;
             
-            if (updatedOffice.status === 2) { // InProgress
-                // Navigate to qurea page to watch the process
-                router.push(`/qurea/${selectedOffice.value.id}`);
-            } else if (updatedOffice.status === 3) { // Completed
-                // Navigate to results
-                router.push(`/qurea/${selectedOffice.value.id}`);
+            if(updatedOffice.status === 2){
+                processing.value = false;
+                showAlert('القرعة قيد التنفيذ حاليا', 'alert', 'تنبيه');
+                return;
+            }
+            
+            if (updatedOffice.status === 3) {
+                // Navigate to qurea page to watch/see results
+                router.push(`/qurea/${officeId}`);
             }
         }
-        
-        processing.value = false;
     } catch (e) {
-        console.error(e);
+        console.error('Error starting qurea:', e);
+        showAlert('حدث خطأ أثناء بدء القرعة', 'error', 'خطأ');
+    } finally {
         processing.value = false;
-        alert('حدث خطأ أثناء بدء القرعة');
     }
 };
 
