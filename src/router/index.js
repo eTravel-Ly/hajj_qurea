@@ -10,9 +10,9 @@ const VALID_ROUTE_KEY = import.meta.env.VITE_ROUTE_KEY || '72054865-9308-4095-99
 const routes = [
     {
         path: '/',
-        name: 'login',
-        component: Login,
-        meta: { requiresKey: false, requiresAuth: false }
+        name: 'dashboard',
+        component: Dashboard,
+        meta: { requiresKey: false, requiresAuth: true }
         // meta: { requiresAuth: true }
     },
     {
