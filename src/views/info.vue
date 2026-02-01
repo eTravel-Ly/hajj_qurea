@@ -1,181 +1,234 @@
 <template>
-    <div class="min-h-screen flex flex-col bg-[#FEFAF7] font-sans rtl" dir="rtl">
+    <div class="min-h-screen flex flex-col bg-[#FEFAF7] font-sans" dir="rtl">
       <!-- Top Navigation -->
       <header class="bg-white shadow-sm z-20 flex-shrink-0 h-16 flex justify-between items-center px-6">
         <div class="flex items-center gap-3">
+          <!-- Sidebar Toggle Button -->
+          <button 
+            @click="toggleSidebar"
+            class="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-colors"
+            :title="sidebarVisible ? 'إخفاء الشريط الجانبي' : 'إظهار الشريط الجانبي'"
+          >
+            <img src="/sidebar-right.png" alt="Sidebar" class="h-5 w-5" />
+          </button>
           <div>
              <h1 class="font-bold text-primary text-lg leading-tight">منصة حجاج</h1>
              <p class="text-[10px] text-gray-500">لخدمات الحج والعمرة</p>
           </div>
         </div>
+        
+        <!-- Global Stats Placeholder (Matching Qurea) -->
+        <div class="hidden md:flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+            <div class="flex items-center gap-2">
+               <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+               <span class="text-xs text-gray-400">إجمالي الحجاج</span>
+               <span class="font-bold text-gray-700 font-mono text-lg">{{ indicators.totalPilgrims.toLocaleString() }}</span>
+            </div>
+            <div class="w-px h-4 bg-gray-300"></div>
+            <div class="text-xs text-secondary font-bold">الإحصائيات</div>
+        </div>
+        
         <button @click="handleLogout" class="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
           <img src="/logout-02.png" alt="Logout" class="h-5 w-5" />
         </button>
       </header>
 
-      <!-- Main Content Container -->
-      <main class="flex-1 flex justify-center items-center py-8 relative">
-        <!-- Loading State -->
-        <div v-if="isLoading" class="absolute inset-0 bg-[#FEFAF7]/80 z-30 flex items-center justify-center">
-          <div class="flex flex-col items-center gap-4">
-            <div class="w-12 h-12 border-4 border-[#01564733] border-t-[#015647] rounded-full animate-spin"></div>
-            <span class="text-sm font-medium text-[#2B3032]">جاري تحميل البيانات...</span>
-          </div>
-        </div>
+      <!-- Main Content -->
+      <main class="flex-grow flex overflow-hidden" style="height: calc(100vh - 4rem);">
+        <!-- Right Sidebar (Toggleable) -->
+        <aside 
+          class="bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden md:relative"
+          :class="[
+            sidebarVisible 
+              ? 'w-[80%] md:w-80 border-l border-gray-200 z-50 translate-x-0 opacity-100' 
+              : 'w-[80%] md:w-80 md:!w-0 translate-x-full md:translate-x-0 opacity-0 md:opacity-100 border-0 md:!p-0 md:!min-w-0 md:!max-w-0 pointer-events-none md:pointer-events-auto',
+            'fixed md:relative inset-y-0 right-0 md:inset-auto'
+          ]"
+        >
+          <div v-show="sidebarVisible" class="flex flex-col h-full py-4 px-4 gap-2 relative">
+            <nav class="w-full flex flex-col gap-1">
+              <div class="px-3 py-1 mb-1 border-b border-gray-50">
+                <span class="text-[14px] font-medium text-[#23282D66]" style="font-family: 'The Year of Handicrafts'">لوحة التحكم</span>
+              </div>
 
-        <!-- Error Notification Toast -->
-        <transition name="fade">
-          <div v-if="showErrorNotify" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
-             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-             <span class="text-sm font-bold">فشل الاتصال بالخادم. يتم عرض بيانات تجريبية.</span>
-             <button @click="showErrorNotify = false" class="hover:opacity-70">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
-             </button>
-          </div>
-        </transition>
-
-        <div v-if="!isLoading" class="w-[900px] flex flex-col gap-2">
-          <!-- Header Row  -->
-          <div class="flex justify-between items-center h-[28px]">
-             <h2 class="text-sm font-semibold text-[#2B3032]">ملخص</h2>
-             <button class="flex items-center gap-1 px-2 py-1 bg-[#23282D0D] rounded-lg text-xs text-[#2B3032]">
-                                <svg class="w-4 h-4 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                <span>الكل</span>
-             </button>
-          </div>
-
-          <!-- Summary Cards Row  -->
-          <div class="flex gap-7 h-[112px]">
-            <!-- Card 1 -->
-            <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end">
-              <span class="text-[12px] font-medium text-[#2B3032]">مكاتب لم تبدأ بعد</span>
-              <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.officesNotStartedCount }}</div>
-            </div>
-            <!-- Card 2 -->
-            <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end">
-              <span class="text-[12px] font-medium text-[#2B3032]">مكاتب انتهت من القرعة</span>
-              <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.officesFinishedCount }}</div>
-            </div>
-            <!-- Card 3 -->
-            <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end">
-              <span class="text-[12px] font-medium text-[#2B3032]">الفائزين بالقرعة</span>
-              <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.totalWinnersCount }}</div>
-            </div>
-            <!-- Card 4 -->
-            <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end">
-              <span class="text-[12px] font-medium text-[#2B3032]">المسجلين في المنظومة</span>
-              <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.registeredUsersCount }}</div>
-            </div>
-          </div>
-
-          <!-- Middle Block  -->
-          <div class="flex gap-7 h-[280px]">
-             <!-- Donut Chart Block  -->
-             <div class="w-[600px] min-w-[400px] bg-white rounded-2xl p-6 flex flex-col gap-4 flex-grow">
-                <!-- Text Header Row -->
-                <div class="flex justify-between items-center h-[28px] shrink-0">
-                  <!-- <button class="flex items-center gap-1 px-2 py-1 bg-[#23282D0D] rounded-lg h-[28px] w-[76px] justify-center">
-                    <div class="flex items-center justify-center w-5 h-5 gap-1 shrink-0">
-                       <svg class="w-4 h-4 opacity-40 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                    </div>
-                    <span class="text-[12px] text-[#2B3032]">طرابلس</span>
-                  </button> -->
-                  <h3 class="text-sm font-semibold text-[#2B3032] flex-grow text-right">التوزيع حسب المكتب</h3>
+              <!-- Dashboard Link -->
+              <!-- <router-link to="/" class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group">
+                <span class="text-[14px] text-[#2B3032] group-hover:text-primary" style="font-family: 'The Year of Handicrafts'">لوحة التحكم</span>
+                <div class="w-5 h-5 flex items-center justify-center">
+                   <svg class="w-5 h-5 text-[#2B3032]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
                 </div>
+              </router-link> -->
 
-                <!-- Frame -->
-                <div class="flex flex-1 items-center justify-center px-5 gap-10 border-none">
-                  <!-- Donut Chart -->
-                  <div class="w-[140px] h-[140px] shrink-0">
-                     <apexchart type="donut" width="140" height="140" :options="paginatedChartOptions" :series="paginatedSeries"></apexchart>
-                  </div>
+              <!-- Qurea Link -->
+              <!-- <router-link to="/qurea/1" class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group">
+                <span class="text-[14px] text-[#2B3032] group-hover:text-primary" style="font-family: 'The Year of Handicrafts'">القرعة</span>
+                <div class="w-5 h-5 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-[#2B3032]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4V4z"/><path d="M4 11h16"/><path d="M10 4v7"/></svg>
+                </div>
+              </router-link> -->
 
-                  <!-- Legend Card -->
-                  <div class="flex-1 flex flex-col max-w-[352px] self-stretch py-2">
-                    <div class="flex-1 flex flex-col gap-3">
-                      <div v-for="(item, idx) in paginatedLegend" :key="item.index" 
-                           class="flex items-center justify-between h-[22px]">
-                        <!-- Tag -->
-                        <div class="flex items-center gap-2">
-                          <span class="text-[12px] text-[#2B3032]">{{ item.label }}</span>
-                          <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: donutOptions.colors[idx] || '#eee' }"></span>
+              <!-- Statistics Link (Active) -->
+              <div class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg bg-[#03AA770D] transition-colors">
+                <span class="text-[14px] text-[#03AA77]" style="font-family: 'The Year of Handicrafts'">الإحصائيات</span>
+                <div class="w-5 h-5 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-[#03AA77]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
+                </div>
+              </div>
+
+              <!-- Export Button -->
+              <button @click="handleExport" :disabled="isExporting" class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group mt-4 ">
+                <span class="text-[14px] text-[#2B3032] group-hover:text-primary" style="font-family: 'The Year of Handicrafts'">{{ isExporting ? 'جاري الاستخراج...' : 'استخراج النتائج' }}</span>
+                <div class="w-5 h-5 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-[#2B3032]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
+                       <path d="M6 18H18V9L15 6H6V18Z"/>
+                       <path d="M10 6V9H14"/>
+                       <path d="M10 18V14H14V18"/>
+                       <path d="M12 11V14"/>
+                    </svg>
+                </div>
+              </button>
+            </nav>
+          </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <div class="flex-1 flex flex-col overflow-y-auto relative bg-[#FEFAF7]">
+
+        <div class="flex-1 flex flex-col items-center py-8">
+            <div v-if="isLoading" class="absolute inset-0 bg-[#FEFAF7]/80 z-30 flex items-center justify-center">
+              <div class="flex flex-col items-center gap-4">
+                <div class="w-12 h-12 border-4 border-[#01564733] border-t-[#015647] rounded-full animate-spin"></div>
+                <span class="text-sm font-medium text-[#2B3032]">جاري تحميل البيانات...</span>
+              </div>
+            </div>
+
+            <transition name="fade">
+              <div v-if="showErrorNotify" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
+                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                 <span class="text-sm font-bold">فشل الاتصال بالخادم. يتم عرض بيانات تجريبية.</span>
+                 <button @click="showErrorNotify = false" class="hover:opacity-70">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                 </button>
+              </div>
+            </transition>
+
+            <div v-if="!isLoading" class="w-[900px] flex flex-col gap-2 scale-95 origin-top">
+              <div class="flex justify-between items-center h-[28px]">
+                 <h2 class="text-sm font-semibold text-[#2B3032]">ملخص</h2>
+                 <button class="flex items-center gap-1 px-2 py-1 bg-[#23282D0D] rounded-lg text-xs text-[#2B3032]">
+                    <svg class="w-4 h-4 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+                    <span>الكل</span>
+                 </button>
+              </div>
+
+              <div class="flex gap-7 h-[112px]">
+                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                  <span class="text-[12px] font-medium text-[#2B3032]">مكاتب لم تبدأ بعد</span>
+                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.officesNotStartedCount }}</div>
+                </div>
+                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                  <span class="text-[12px] font-medium text-[#2B3032]">مكاتب انتهت من القرعة</span>
+                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.officesFinishedCount }}</div>
+                </div>
+                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                  <span class="text-[12px] font-medium text-[#2B3032]">الفائزين بالقرعة</span>
+                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.totalWinnersCount }}</div>
+                </div>
+                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                  <span class="text-[12px] font-medium text-[#2B3032]">المسجلين في المنظومة</span>
+                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.registeredUsersCount }}</div>
+                </div>
+              </div>
+
+              <div class="flex gap-7 h-[280px]">
+                 <div class="w-[600px] min-w-[400px] bg-white rounded-2xl p-6 flex flex-col gap-4 flex-grow transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                    <div class="flex justify-between items-center h-[28px] shrink-0">
+                      <h3 class="text-sm font-semibold text-[#2B3032] flex-grow text-right">التوزيع حسب المكتب</h3>
+                    </div>
+
+                    <div class="flex flex-1 items-center justify-center px-5 gap-10 border-none">
+                      <div class="w-[140px] h-[140px] shrink-0">
+                         <apexchart type="donut" width="140" height="140" :options="paginatedChartOptions" :series="paginatedSeries"></apexchart>
+                      </div>
+
+                      <div class="flex-1 flex flex-col max-w-[352px] self-stretch py-2">
+                        <div class="flex-1 flex flex-col gap-3">
+                          <div v-for="(item, idx) in paginatedLegend" :key="item.index" 
+                               class="flex items-center justify-between h-[22px]">
+                            <div class="flex items-center gap-2">
+                              <span class="text-[12px] text-[#2B3032]">{{ item.label }}</span>
+                              <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: donutOptions.colors[idx] || '#eee' }"></span>
+                            </div>
+                            <span class="text-[12px] text-[#2B3032] font-['Inter'] min-w-[35px] text-left">{{ item.percentage }}%</span>
+                          </div>
                         </div>
-                        <!-- Percentage -->
-                        <span class="text-[12px] text-[#2B3032] font-['Inter'] min-w-[35px] text-left">{{ item.percentage }}%</span>
+                        
+                        <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 pt-4 mt-auto border-t border-gray-50">
+                           <button @click="legendPage--" :disabled="legendPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                           </button>
+                           <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ legendPage }} / {{ totalPages }}</span>
+                           <button @click="legendPage++" :disabled="legendPage >= totalPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                           </button>
+                        </div>
                       </div>
                     </div>
-                    
-                    <!-- Pagination Controls -->
-                    <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 pt-4 mt-auto border-t border-gray-50">
-                       <button @click="legendPage--" :disabled="legendPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                 </div>
+
+                 <div class="w-[272px] bg-white rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                    <h3 class="text-sm font-semibold text-[#2B3032] text-right">إحصائيات</h3>
+                    <div class="flex flex-col gap-4 w-full">
+                      <div class="flex justify-between w-full text-[12px]">
+                        <span class="font-medium text-[#2B3032]">{{ indicators.totalPilgrims.toLocaleString() }}</span>
+                        <span class="text-[#2B3032] opacity-60">عدد الحواج</span>
+                      </div>
+                      <div class="flex justify-between w-full text-[12px]">
+                        <span class="font-medium text-[#2B3032]">{{ indicators.maleCount.toLocaleString() }}</span>
+                        <span class="text-[#2B3032] opacity-60">ذكور</span>
+                      </div>
+                      <div class="flex justify-between w-full text-[12px]">
+                        <span class="font-medium text-[#2B3032]">{{ indicators.femaleCount.toLocaleString() }}</span>
+                        <span class="text-[#2B3032] opacity-60">إناث</span>
+                      </div>
+                      <div class="flex justify-between w-full text-[12px]">
+                        <span class="font-medium text-[#2B3032]">{{ indicators.numberOfHajjajOver65YearsOfAge.toLocaleString() }}</span>
+                        <span class="text-[#2B3032] opacity-60">اكبر من 60</span>
+                      </div>
+                      <div class="flex justify-between w-full text-[12px]">
+                        <span class="font-medium text-[#2B3032]">{{ (indicators.totalCompletionRateForAllCenters * 100).toFixed(1) }}%</span>
+                        <span class="text-[#2B3032] opacity-60">نسبة الانجاز</span>
+                      </div>
+                      <div class="flex justify-between w-full text-[12px]">
+                        <span class="font-medium text-[#2B3032]">{{ indicators.totalWinnersCount.toLocaleString() }}</span>
+                        <span class="text-[#2B3032] opacity-60">الفائزين</span>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+
+              <div class="flex gap-7 h-[280px]">
+                <div class="flex-1 bg-white rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                  <div class="flex justify-between items-center mb-2">
+                    <div v-if="totalBarPages > 1" class="flex items-center gap-4">
+                       <button @click="barPage--" :disabled="barPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                        </button>
-                       <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ legendPage }} / {{ totalPages }}</span>
-                       <button @click="legendPage++" :disabled="legendPage >= totalPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
+                       <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ barPage }} / {{ totalBarPages }}</span>
+                       <button @click="barPage++" :disabled="barPage >= totalBarPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
                           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                        </button>
                     </div>
+                    <h3 class="text-sm font-semibold text-[#2B3032] text-right">عدد الفائزين في كل مكتب</h3>
+                  </div>
+                  <div class="flex-1 overflow-hidden">
+                    <apexchart :key="barPage" type="bar" height="100%" width="100%" :options="paginatedBarOptions" :series="paginatedBarSeries"></apexchart>
                   </div>
                 </div>
-             </div>
-
-             <!-- Stats List -->
-             <div class="w-[272px] bg-white rounded-2xl p-6 flex flex-col gap-4">
-                <h3 class="text-sm font-semibold text-[#2B3032] text-right">إحصائيات</h3>
-                <div class="flex flex-col gap-4 w-full">
-                  <div class="flex justify-between w-full text-[12px]">
-                    <span class="font-medium text-[#2B3032]">{{ indicators.totalPilgrims.toLocaleString() }}</span>
-                    <span class="text-[#2B3032] opacity-60">عدد الحواج</span>
-                  </div>
-                  <div class="flex justify-between w-full text-[12px]">
-                    <span class="font-medium text-[#2B3032]">{{ indicators.maleCount.toLocaleString() }}</span>
-                    <span class="text-[#2B3032] opacity-60">ذكور</span>
-                  </div>
-                  <div class="flex justify-between w-full text-[12px]">
-                    <span class="font-medium text-[#2B3032]">{{ indicators.femaleCount.toLocaleString() }}</span>
-                    <span class="text-[#2B3032] opacity-60">إناث</span>
-                  </div>
-                  <div class="flex justify-between w-full text-[12px]">
-                    <span class="font-medium text-[#2B3032]">{{ indicators.numberOfHajjajOver65YearsOfAge.toLocaleString() }}</span>
-                    <span class="text-[#2B3032] opacity-60">اكبر من 60</span>
-                  </div>
-                  <div class="flex justify-between w-full text-[12px]">
-                    <span class="font-medium text-[#2B3032]">{{ indicators.totalCompletionRateForAllCenters.toLocaleString() }}</span>
-                    <span class="text-[#2B3032] opacity-60">اجمالي القرعة لكل المكاتب</span>
-                  </div>
-                  <div class="flex justify-between w-full text-[12px]">
-                    <span class="font-medium text-[#2B3032]">{{ indicators.totalWinnersCount.toLocaleString() }}</span>
-                    <span class="text-[#2B3032] opacity-60">الفائزين</span>
-                  </div>
-                </div>
-             </div>
-          </div>
-
-          <!-- Bottom Block  -->
-          <div class="flex gap-7 h-[280px]">
-            <!-- Bar Chart Block -->
-            <div class="flex-1 bg-white rounded-2xl p-6 flex flex-col gap-4">
-              <div class="flex justify-between items-center mb-2">
-                <!-- Bar Chart Pagination -->
-                <div v-if="totalBarPages > 1" class="flex items-center gap-4">
-                   <button @click="barPage--" :disabled="barPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
-                   </button>
-                   <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ barPage }} / {{ totalBarPages }}</span>
-                   <button @click="barPage++" :disabled="barPage >= totalBarPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
-                      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
-                   </button>
-                </div>
-                <h3 class="text-sm font-semibold text-[#2B3032] text-right">عدد الفائزين في كل مكتب</h3>
               </div>
-              <div class="flex-1 overflow-hidden">
-                <apexchart :key="barPage" type="bar" height="100%" width="100%" :options="paginatedBarOptions" :series="paginatedBarSeries"></apexchart>
-              </div>
+
             </div>
-            
-
-          </div>
-
+        </div>
         </div>
       </main>
     </div>
@@ -197,6 +250,7 @@ export default {
             isLoading: true,
             error: null,
             showErrorNotify: false,
+            isExporting: false,
             // Indicators data
             indicators: {
               officesNotStartedCount: 0,
@@ -377,6 +431,9 @@ export default {
       await this.fetchIndicators();
     },
     methods: {
+        toggleSidebar() {
+          this.sidebarVisible = !this.sidebarVisible;
+        },
         async fetchIndicators() {
           this.isLoading = true;
           this.error = null;
@@ -478,8 +535,28 @@ export default {
             }
           };
         },
-        toggleSidebar() {
-            this.sidebarVisible = !this.sidebarVisible
+        async handleExport() {
+          if (this.isExporting) return;
+          this.isExporting = true;
+          try {
+            const response = await api.exportcsv();
+            // Assuming the API returns a blob or a URL
+            if (response.data) {
+                const blob = new Blob([response.data], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', 'winners_export.csv');
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            }
+          } catch (err) {
+            console.error("Export failed:", err);
+            alert("فشل استخراج البيانات. يرجى المحاولة مرة أخرى.");
+          } finally {
+            this.isExporting = false;
+          }
         },
         handleLogout() {
             logout();

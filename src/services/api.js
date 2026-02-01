@@ -38,6 +38,9 @@ export default {
 
     getIndicators() {
         return apiClient.get('/admin/QureaElectronicsIndicators');
-    }
+    },
 
+    exportcsv() {
+        return apiClient.post('/admin/PersonRegisterdForHaj/ExtractCsv')
+    }
 }
