@@ -302,18 +302,17 @@
             </div>
 
             <!-- Start Lottery Button -->
-             <!--    for button 
-               :disabled="isDrawing || currentOffice?.status !== 0 || allWinnersShown || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" -->
             <button     
               @click="handleStartLottery"
+              :disabled="isButtonDisabled || isPolling"
               class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               style="font-family: 'Somar Sans', sans-serif;"
             >
-              <svg v-if="!isDrawing && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+              <svg v-if="!isDrawing && !isPolling && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M8 5v14l11-7z"/>
               </svg>
-              <span v-if="isDrawing || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
-              <span>{{ isDrawing ? 'جاري السحب...' : lotteryButtonText }}</span>
+              <span v-if="isDrawing || isPolling || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
+              <span>{{ isPolling ? 'جاري بدء القرعة...' : (isDrawing ? 'جاري السحب...' : lotteryButtonText) }}</span>
             </button>
           </div>
         </div>
@@ -353,6 +352,7 @@ const currentCompanion = ref(null);
 const animatedPilgrimName = ref('');
 const animatedCompanionName = ref('');
 const isDrawing = ref(false);
+const isPolling = ref(false);
 const winnersQueue = ref([]);
 const currentWinnerIndex = ref(-1);
 const cachedRegisterNames = ref([]);
@@ -512,6 +512,7 @@ const numberDisplayDuration = ref(0.05); // How long each number shows in second
 let timeInterval = null;
 let drawingInterval = null;
 let nextWinnerTimeout = null;
+let pollingInterval = null;
 
 const handleLogout = () => {
     logout();
@@ -565,12 +566,15 @@ const isLotteryRunning = computed(() => {
 
 // Button disabled state - only clickable when starting fresh or all winners shown
 const isButtonDisabled = computed(() => {
-  // Disabled while drawing or showing winners
-  return isDrawing.value || (winnersQueue.value.length > 0 && currentWinnerIndex.value < winnersQueue.value.length - 1 && currentWinnerIndex.value >= 0);
+  // Disabled while drawing or polling or showing winners
+  return isDrawing.value || isPolling.value || (winnersQueue.value.length > 0 && currentWinnerIndex.value < winnersQueue.value.length - 1 && currentWinnerIndex.value >= 0);
 });
 
 // Button text based on state
 const lotteryButtonText = computed(() => {
+  if (isPolling.value) {
+    return 'جاري بدء القرعة...';
+  }
   if (winnersQueue.value.length === 0) {
     return 'بدأ القرعة';
   } else if (currentWinnerIndex.value >= 0 && currentWinnerIndex.value < winnersQueue.value.length - 1) {
@@ -730,12 +734,17 @@ const handleStartLottery = async () => {
   if (winnersQueue.value.length === 0) {
     // First time load all winners from API
     try {
-      await api.startQurea(currentOffice.value.id);
+      const call = await api.startQurea(currentOffice.value.id);
+      if (call.data?.object?.status == 2) {
+        startPollingWinners();
+        return;
+      }
+      
       const res = await api.getOfficeWinners(currentOffice.value.id);
       const winners = res.data?.object || [];
       
       if (!Array.isArray(winners) || winners.length === 0) {
-        showAlert('لا توجد نتائج قرعة', 'alert', 'تنبيه');
+        showAlert('لا توجد نتائج قرعة حالياً', 'alert', 'تنبيه');
         return;
       }
       
@@ -759,7 +768,6 @@ const handleStartLottery = async () => {
       showNextWinnerInLoop();
     } catch (error) {
       console.error('Error loading winners:', error);
-      showAlert('حدث خطأ في تحميل نتائج القرعة', 'alert', 'تنبيه');
       return;
     }
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
@@ -777,6 +785,61 @@ const handleStartLottery = async () => {
   } else {
     // Continue from where we left off
     showNextWinnerInLoop();
+  }
+};
+
+// Start polling for winners
+const startPollingWinners = async () => {
+  if (isPolling.value) return;
+  
+  isPolling.value = true;
+  
+  const poll = async () => {
+    try {
+      const res = await api.startQurea(currentOffice.value.id);
+      if (res.data?.object?.status === 3) {
+        // Stop polling
+        if (pollingInterval) {
+          clearInterval(pollingInterval);
+          pollingInterval = null;
+        }
+        isPolling.value = false;
+        
+        // Load winners
+        const winnersRes = await api.getOfficeWinners(currentOffice.value.id);
+        const winners = winnersRes.data?.object || [];
+        
+        if (Array.isArray(winners) && winners.length > 0) {
+          winnersQueue.value = winners;
+          currentWinnerIndex.value = -1;
+          
+          // Update status
+          currentOffice.value.status = 2;
+          currentOffice.value.selectedCount = 0;
+          saveState();
+          
+          cachedRegisterNames.value = winners;
+          registerNumbers.value = [];
+          currentRegisterIndex.value = 0;
+          currentRegisterPage.value = 1;
+          
+          showNextWinnerInLoop();
+        } else {
+          showAlert('لم يتم العثور على فائزين بعد توقف القرعة', 'alert', 'تنبيه');
+        }
+      }
+    } catch (error) {
+      console.error('Error during polling:', error);
+      // We continue polling despite errors unless it's a critical failure
+    }
+  };
+
+  // Initial call
+  await poll();
+  
+  // If still polling, set interval
+  if (isPolling.value) {
+    pollingInterval = setInterval(poll, 2000);
   }
 };
 
@@ -1075,6 +1138,9 @@ onUnmounted(() => {
   }
   if (nextWinnerTimeout) {
     clearTimeout(nextWinnerTimeout);
+  }
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
   }
 });
 </script>
