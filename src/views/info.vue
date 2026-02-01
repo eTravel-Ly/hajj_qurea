@@ -196,7 +196,7 @@
                         <span class="text-[#2B3032] opacity-60">اكبر من 60</span>
                       </div>
                       <div class="flex justify-between w-full text-[12px]">
-                        <span class="font-medium text-[#2B3032]">{{ (indicators.totalCompletionRateForAllCenters * 100).toFixed(1) }}%</span>
+                        <span class="font-medium text-[#2B3032]">{{ indicators.totalCompletionRateForAllCenters }}</span>
                         <span class="text-[#2B3032] opacity-60">نسبة الانجاز</span>
                       </div>
                       <div class="flex justify-between w-full text-[12px]">
@@ -460,11 +460,13 @@ export default {
 
               // Map Donut Chart (distributionByCenter)
               if (data.distributionByCenter && Object.keys(data.distributionByCenter).length > 0) {
-                const keys = Object.keys(data.distributionByCenter);
-                this.donutSeries = keys.map(k => data.distributionByCenter[k]);
+                const sortedEntries = Object.entries(data.distributionByCenter)
+                  .sort((a, b) => b[1] - a[1]);
+                
+                this.donutSeries = sortedEntries.map(e => e[1]);
                 this.donutOptions = {
                   ...this.donutOptions,
-                  labels: keys
+                  labels: sortedEntries.map(e => e[0])
                 };
               } else {
                 this.donutSeries = [];
@@ -473,13 +475,16 @@ export default {
 
               // Map Bar Chart (numberOfWinnersInEachCenter)
               if (data.numberOfWinnersInEachCenter && Object.keys(data.numberOfWinnersInEachCenter).length > 0) {
-                const keys = Object.keys(data.numberOfWinnersInEachCenter);
-                const values = keys.map(k => data.numberOfWinnersInEachCenter[k]);
+                const sortedEntries = Object.entries(data.numberOfWinnersInEachCenter)
+                  .sort((a, b) => b[1] - a[1]);
+                
+                const sortedKeys = sortedEntries.map(e => e[0]);
+                const sortedValues = sortedEntries.map(e => e[1]);
                 
                 this.barSeries = [
                   {
                     name: 'الفائزين (إجمالي)',
-                    data: values
+                    data: sortedValues
                   }
                 ];
                 
@@ -487,7 +492,7 @@ export default {
                   ...this.barOptions,
                   xaxis: {
                     ...this.barOptions.xaxis,
-                    categories: keys
+                    categories: sortedKeys
                   }
                 };
               } else {
