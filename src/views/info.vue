@@ -4,13 +4,6 @@
       <header class="bg-white shadow-sm z-20 flex-shrink-0 h-16 flex justify-between items-center px-6">
         <div class="flex items-center gap-3">
           <!-- Sidebar Toggle Button -->
-          <button 
-            @click="toggleSidebar"
-            class="p-2 hover:bg-gray-100 text-gray-600 hover:text-gray-800 rounded-lg transition-colors"
-            :title="sidebarVisible ? 'إخفاء الشريط الجانبي' : 'إظهار الشريط الجانبي'"
-          >
-            <img src="/sidebar-right.png" alt="Sidebar" class="h-5 w-5" />
-          </button>
           <div>
              <h1 class="font-bold text-primary text-lg leading-tight">منصة حجاج</h1>
              <p class="text-[10px] text-gray-500">لخدمات الحج والعمرة</p>
@@ -56,60 +49,6 @@
       <!-- Main Content -->
       <main class="flex-grow flex overflow-hidden" style="height: calc(100vh - 4rem);">
         <!-- Right Sidebar-->
-        <aside 
-          class="bg-white flex flex-col flex-shrink-0 transition-all duration-300 ease-in-out overflow-hidden md:relative"
-          :class="[
-            sidebarVisible 
-              ? 'w-[80%] md:w-80 border-l border-gray-200 z-50 translate-x-0 opacity-100' 
-              : 'w-[80%] md:w-80 md:!w-0 translate-x-full md:translate-x-0 opacity-0 md:opacity-100 border-0 md:!p-0 md:!min-w-0 md:!max-w-0 pointer-events-none md:pointer-events-auto',
-            'fixed md:relative inset-y-0 right-0 md:inset-auto'
-          ]"
-        >
-          <div v-show="sidebarVisible" class="flex flex-col h-full py-4 px-4 gap-2 relative">
-            <nav class="w-full flex flex-col gap-1">
-              <div class="px-3 py-1 mb-1 border-b border-gray-50">
-                <span class="text-[14px] font-medium text-[#23282D66]" style="font-family: 'The Year of Handicrafts'">لوحة التحكم</span>
-              </div>
-
-              <!-- Dashboard Link -->
-              <!-- <router-link to="/" class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group">
-                <span class="text-[14px] text-[#2B3032] group-hover:text-primary" style="font-family: 'The Year of Handicrafts'">لوحة التحكم</span>
-                <div class="w-5 h-5 flex items-center justify-center">
-                   <svg class="w-5 h-5 text-[#2B3032]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18"/><path d="M9 21V9"/></svg>
-                </div>
-              </router-link> -->
-
-              <!-- Qurea Link -->
-              <!-- <router-link to="/qurea/1" class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group">
-                <span class="text-[14px] text-[#2B3032] group-hover:text-primary" style="font-family: 'The Year of Handicrafts'">القرعة</span>
-                <div class="w-5 h-5 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-[#2B3032]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 4h16v16H4V4z"/><path d="M4 11h16"/><path d="M10 4v7"/></svg>
-                </div>
-              </router-link> -->
-
-              <!-- Statistics Link  -->
-              <div class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg bg-[#03AA770D] transition-colors">
-                <span class="text-[14px] text-[#03AA77]" style="font-family: 'The Year of Handicrafts'">الإحصائيات</span>
-                <div class="w-5 h-5 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-[#03AA77]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/></svg>
-                </div>
-              </div>
-
-              <!-- Export Button -->
-              <button @click="handleExport" :disabled="isExporting" class="flex items-center justify-end gap-2 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors group mt-4 ">
-                <span class="text-[14px] text-[#2B3032] group-hover:text-primary" style="font-family: 'The Year of Handicrafts'">{{ isExporting ? 'جاري الاستخراج...' : 'استخراج النتائج' }}</span>
-                <div class="w-5 h-5 flex items-center justify-center">
-                    <svg class="w-5 h-5 text-[#2B3032]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.25">
-                       <path d="M6 18H18V9L15 6H6V18Z"/>
-                       <path d="M10 6V9H14"/>
-                       <path d="M10 18V14H14V18"/>
-                       <path d="M12 11V14"/>
-                    </svg>
-                </div>
-              </button>
-            </nav>
-          </div>
-        </aside>
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col overflow-y-auto relative bg-[#FEFAF7]">
