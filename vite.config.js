@@ -20,6 +20,11 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/proxy-api/, ''),
       },
+      '/proxy-time': {
+        target: 'https://timeapi.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/proxy-time/, ''),
+      },
     },
   },
 })

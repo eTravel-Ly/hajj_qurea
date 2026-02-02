@@ -91,6 +91,7 @@ const router = useRouter();
 // Target Date: 07-02-2026 10:00 AM Tripoli Time
 // Format: YYYY-MM-DDTHH:mm:ss+Offset
 const TARGET_DATE_STR = "2026-02-07T10:00:00+02:00"; 
+const API_URL = "/proxy-time/api/v1/time/current/zone?timezone=Africa%2FTripoli";
 
 const targetDate = new Date(TARGET_DATE_STR);
 const days = ref(0);
@@ -98,10 +99,35 @@ const hours = ref(0);
 const minutes = ref(0);
 const seconds = ref(0);
 const expired = ref(false);
+const isLoading = ref(true);
 let interval = null;
+let timeOffset = 0; // Difference between server time and local time (server - local)
+
+const fetchServerTime = async () => {
+    try {
+        const response = await fetch(API_URL);
+        if (!response.ok) throw new Error('Failed to fetch time');
+        const data = await response.json();
+        
+        // Construct date object from API response
+        // data.date_time example: "2026-02-02T17:36:55.709584+02:00"
+        const serverTime = new Date(data.date_time);
+        const localTime = new Date();
+        timeOffset = serverTime - localTime;
+        
+        isLoading.value = false;
+        startTimer();
+    } catch (error) {
+        console.error("Error fetching time from API, falling back to local time:", error);
+        // Fallback: assume local time is correct enough or just proceed
+        isLoading.value = false;
+        startTimer();
+    }
+};
 
 const updateTimer = () => {
-  const now = new Date();
+  // Current time = Local time + Calculated Offset
+  const now = new Date(Date.now() + timeOffset);
   const diff = targetDate - now;
 
   if (diff <= 0) {
@@ -122,9 +148,15 @@ const updateTimer = () => {
   seconds.value = Math.floor((diff % (1000 * 60)) / 1000);
 };
 
-onMounted(() => {
-    updateTimer();
+const startTimer = () => {
+    updateTimer(); // Initial call
+    // Clear any existing interval just in case
+    if (interval) clearInterval(interval);
     interval = setInterval(updateTimer, 1000);
+};
+
+onMounted(() => {
+    fetchServerTime();
 });
 
 onUnmounted(() => {
