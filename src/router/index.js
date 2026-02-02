@@ -54,11 +54,8 @@ const router = createRouter({
     routes
 });
 
-// COUNTDOWN DATE CONFIGURATION
-// User requested: 07-02-2020 10 AM +02:00
-// Since 2020 is in the past, we use 2026 (current year) for demonstration.
-// Change year to 2020 if strictly required, but it will expire immediately.
-const COUNTDOWN_DATE = new Date("2026-02-02T18:16:30+02:00");
+import { COUNTDOWN_TARGET_DATE } from '../constants';
+const COUNTDOWN_DATE = new Date("2026-02-02T18:49:00+02:00");
 
 router.beforeEach((to, from, next) => {
     // 1. Check for key requirement (Public/Private check)
@@ -73,6 +70,7 @@ router.beforeEach((to, from, next) => {
     // 2. Check for auth requirement
     if (to.meta.requiresAuth && !authState.isAuthenticated) {
         // If not authenticated, redirect to login
+
         return next('/login');
     }
 
@@ -83,11 +81,18 @@ router.beforeEach((to, from, next) => {
         if (now < COUNTDOWN_DATE) {
             // Countdown is active
             if (to.path !== '/countdown') {
+                // If trying to access Qurea page, preserve the officeId in query params
+                if (to.params.officeId) {
+                    return next({ path: '/countdown', query: { officeId: to.params.officeId } });
+                }
                 return next('/countdown');
             }
         } else {
             // Countdown expired
             if (to.path === '/countdown') {
+                if (to.query.officeId) {
+                    return next(`/qurea/${to.query.officeId}`);
+                }
                 return next('/');
             }
         }

@@ -84,13 +84,15 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
+import { COUNTDOWN_TARGET_DATE } from '../constants';
 
 const router = useRouter();
+const route = useRoute();
 
 // Target Date: 07-02-2026 10:00 AM Tripoli Time
 // Format: YYYY-MM-DDTHH:mm:ss+Offset
-const TARGET_DATE_STR = "2026-02-02T18:15:00+02:00"; 
+const TARGET_DATE_STR = "2026-02-02T18:49:00+02:00"; 
 const API_URL = "/proxy-time/api/v1/time/current/zone?timezone=Africa%2FTripoli";
 
 const targetDate = new Date(TARGET_DATE_STR);
@@ -137,7 +139,14 @@ const updateTimer = () => {
     
     // Redirect to home/login after a brief moment
     setTimeout(() => {
-        router.push('/');
+        const officeId = route.query.officeId;
+        console.log('Countdown finished. OfficeId:', officeId);
+        if (officeId) {
+            router.push(`/qurea/${officeId}`);
+        } else {
+            console.warn('No officeId found in query, redirecting to login');
+            router.push('/');
+        }
     }, 1500);
     return;
   }

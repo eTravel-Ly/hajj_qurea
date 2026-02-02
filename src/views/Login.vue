@@ -54,6 +54,7 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login, parseJwt } from '../services/auth';
 import api from '../services/api';
+import { COUNTDOWN_TARGET_DATE } from '../constants';
 
 const router = useRouter();
 const username = ref('');
@@ -82,8 +83,18 @@ const handleLogin = async () => {
             
             if (offices.length > 0) {
                 const firstOfficeId = offices[0].id;
-                // Redirect to /:officeId
-                router.push(`/qurea/${firstOfficeId}`);
+                
+                // Check Countdown
+                const now = new Date();
+                const targetDate = new Date(COUNTDOWN_TARGET_DATE);
+                
+                if (now < targetDate) {
+                     // Countdown active -> go to countdown page with officeId
+                     router.push({ path: '/countdown', query: { officeId: firstOfficeId } });
+                } else {
+                     // Countdown done -> go to office
+                     router.push(`/qurea/${firstOfficeId}`);
+                }
             } else {
                 console.warn("No offices found, cannot redirect to office ID.");
                 // Fallback to home if no offices (though home is now :officeId, this might be tricky)

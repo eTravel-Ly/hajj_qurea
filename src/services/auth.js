@@ -82,8 +82,8 @@ export function login(username, password) {
 }
 
 export function logout() {
-    localStorage.removeItem('app-token');
-    localStorage.removeItem('refresh-token');
+    localStorage.clear();
+    sessionStorage.clear();
     authState.isAuthenticated = false;
     window.location.href = '/login';
 }
