@@ -66,27 +66,28 @@ class PDFService {
 
             const tableBody = [
                 [
-                    { text: '', style: 'tableHeader' },
-                    { text: 'رقم الهاتف - 2', style: 'tableHeader' },
-                    { text: 'رقم الهاتف - 1', style: 'tableHeader' },
-                    { text: 'اسم المرافق', style: 'tableHeader' },
-                    { text: 'الرقم الوطني/جواز', style: 'tableHeader' },
-                    { text: 'اسم الحاج', style: 'tableHeader' },
+                    { text: 'رقم', style: 'tableHeader' },
                     { text: 'رقم التسجيل', style: 'tableHeader' },
-                    { text: 'رقم', style: 'tableHeader' }
+                    { text: 'اسم الحاج', style: 'tableHeader' },
+                    { text: 'الرقم الوطني/جواز', style: 'tableHeader' },
+                    { text: 'اسم المرافق', style: 'tableHeader' },
+                    { text: 'رقم الهاتف - 1', style: 'tableHeader' },
+                    { text: 'رقم الهاتف - 2', style: 'tableHeader' },
+
+                    { text: '', style: 'tableHeader' },
                 ]
             ];
 
             winners.forEach((winner, index) => {
                 tableBody.push([
-                    { text: '', alignment: 'center' },
-                    { text: this._getVal(winner.companionHajjPhone || winner.companionPhone2), alignment: 'center' },
-                    { text: this._getVal(winner.hajjPhone || winner.companionPhone1 || winner.phone), alignment: 'center' },
-                    { text: this._getVal(winner.companionHajj), alignment: 'center' },
-                    { text: this._getVal(winner.hajjNid || winner.companionNationalId), alignment: 'center' },
-                    { text: this._getVal(winner.hajj), alignment: 'center' },
+                    { text: (index + 1).toString(), alignment: 'center' },
                     { text: this._getVal(winner.registerNumber), alignment: 'center' },
-                    { text: (index + 1).toString(), alignment: 'center' }
+                    { text: this._getVal(winner.hajj), alignment: 'center' },
+                    { text: this._getVal(winner.hajjNid || winner.companionNationalId), alignment: 'center' },
+                    { text: this._getVal(winner.companionHajj), alignment: 'center' },
+                    { text: this._getVal(winner.hajjPhone || winner.companionPhone1 || winner.phone), alignment: 'center' },
+                    { text: this._getVal(winner.companionHajjPhone || winner.companionPhone2), alignment: 'center' },
+                    { text: '', alignment: 'center' },
                 ]);
             });
 
