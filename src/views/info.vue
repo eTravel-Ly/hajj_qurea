@@ -24,6 +24,26 @@
                <span class="text-xs text-gray-400">إجمالي الحجاج</span>
                <span class="font-bold text-gray-700 font-mono text-lg">{{ indicators.totalPilgrims.toLocaleString() }}</span>
             </div>
+             <div class="w-px h-4 bg-gray-300"></div>
+            <!-- Auto Refresh Controls -->
+            <div class="flex items-center gap-3 bg-white px-3 py-1 rounded-md border border-gray-200">
+                <span class="text-[10px] text-gray-500 font-medium">تحديث تلقائي:</span>
+                <input 
+                    type="number" 
+                    v-model.number="autoRefreshInterval" 
+                    min="5" 
+                    class="w-12 text-center text-xs border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:border-primary"
+                />
+                <span class="text-[10px] text-gray-500">ثانية</span>
+                <button 
+                    @click="toggleAutoRefresh" 
+                    class="px-3 py-1 text-xs rounded-md transition-all duration-200 flex items-center gap-1 font-medium"
+                    :class="isAutoRefreshActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#03AA77]/10 text-[#03AA77] hover:bg-[#03AA77]/20'"
+                >
+                    <span v-if="isAutoRefreshActive" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    {{ isAutoRefreshActive ? 'إيقاف' : 'تشغيل' }}
+                </button>
+            </div>
             <div class="w-px h-4 bg-gray-300"></div>
             <div class="text-xs text-secondary font-bold">الإحصائيات</div>
         </div>
@@ -181,7 +201,7 @@
                     <div class="flex flex-col gap-4 w-full">
                       <div class="flex justify-between w-full text-[12px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.totalPilgrims.toLocaleString() }}</span>
-                        <span class="text-[#2B3032] opacity-60">عدد الحواج</span>
+                        <span class="text-[#2B3032] opacity-60">عدد الحجاج</span>
                       </div>
                       <div class="flex justify-between w-full text-[12px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.maleCount.toLocaleString() }}</span>
@@ -193,7 +213,7 @@
                       </div>
                       <div class="flex justify-between w-full text-[12px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.numberOfHajjajOver65YearsOfAge.toLocaleString() }}</span>
-                        <span class="text-[#2B3032] opacity-60">اكبر من 60</span>
+                        <span class="text-[#2B3032] opacity-60"> الأعمار اكبر من 60</span>
                       </div>
                       <div class="flex justify-between w-full text-[12px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.totalCompletionRateForAllCenters }}</span>
@@ -261,9 +281,13 @@ export default {
               femaleCount: 0,
               totalPilgrims: 0,
               numberOfHajjajOver65YearsOfAge: 0,
+              totalCompletionRateForAllCenters: 0,
               totalCompletionRateForAllCenters: 0
             },
-            // Donut Chart Data
+            // Auto Refresh Data
+            autoRefreshInterval: 5,
+            isAutoRefreshActive: true,
+            refreshTimer: null,
             legendPage: 1,
             donutSeries: [],
             donutOptions: {
@@ -429,17 +453,69 @@ export default {
     },
     async mounted() {
       await this.fetchIndicators();
+      // Start auto-refresh if enabled by default
+      if (this.isAutoRefreshActive) {
+          this.startAutoRefresh();
+      }
+    },
+    watch: {
+        autoRefreshInterval(newVal) {
+            // Apply minimum limit
+            if (newVal < 5) return; 
+            
+            // Restart timer if currently active
+            if (this.isAutoRefreshActive) {
+                this.stopAutoRefresh();
+                this.startAutoRefresh();
+            }
+        }
     },
     methods: {
         toggleSidebar() {
           this.sidebarVisible = !this.sidebarVisible;
         },
-        async fetchIndicators() {
-          this.isLoading = true;
-          this.error = null;
-          this.showErrorNotify = false;
-          this.legendPage = 1;
-          this.barPage = 1;
+        handleLogout() {
+            logout();
+        },
+        toggleAutoRefresh() {
+            if (this.isAutoRefreshActive) {
+                this.stopAutoRefresh();
+            } else {
+                this.startAutoRefresh();
+            }
+        },
+        startAutoRefresh() {
+            if (this.autoRefreshInterval < 5) {
+                this.autoRefreshInterval = 5; // Minimum 5 seconds
+            }
+            this.isAutoRefreshActive = true;
+            console.log("Starting auto-refresh with interval:", this.autoRefreshInterval);
+            
+            this.refreshTimer = setInterval(() => {
+                console.log("Auto-refresh tick");
+                this.fetchIndicators(true); // true for silent refresh
+            }, this.autoRefreshInterval * 1000);
+        },
+        stopAutoRefresh() {
+            this.isAutoRefreshActive = false;
+            if (this.refreshTimer) {
+                clearInterval(this.refreshTimer);
+                this.refreshTimer = null;
+            }
+        },
+        async fetchIndicators(silent = false) {
+          if (!silent) {
+            this.isLoading = true;
+            this.error = null;
+            this.showErrorNotify = false;
+          }
+          // Reset pagination logic if needed, or keep it to persist view
+          // Keeping pagination reset only on full reload 
+          if (!silent) {
+              this.legendPage = 1;
+              this.barPage = 1;
+          }
+          
           try {
             const response = await api.getIndicators();
             const data = response.data?.object;
@@ -502,10 +578,15 @@ export default {
             }
           } catch (err) {
             console.error("Error fetching indicators:", err);
-            this.showErrorNotify = true;
-            this.setDummyFull();
+            // Only show error notification if it's not a silent refresh
+            if (!silent) {
+                this.showErrorNotify = true;
+                this.setDummyFull();
+            }
           } finally {
-            this.isLoading = false;
+            if (!silent) {
+                this.isLoading = false;
+            }
           }
         },
         setDummyFull() {
@@ -566,6 +647,9 @@ export default {
         handleLogout() {
             logout();
         }
+    },
+    beforeUnmount() {
+        this.stopAutoRefresh();
     }
 }
 </script>
