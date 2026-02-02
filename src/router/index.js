@@ -58,23 +58,23 @@ const router = createRouter({
 // User requested: 07-02-2020 10 AM +02:00
 // Since 2020 is in the past, we use 2026 (current year) for demonstration.
 // Change year to 2020 if strictly required, but it will expire immediately.
-const COUNTDOWN_DATE = new Date("2026-02-07T10:00:00+02:00");
+// const COUNTDOWN_DATE = new Date("2026-02-07T10:00:00+02:00");
 
 router.beforeEach((to, from, next) => {
     // Countdown Enforcer
-    const now = new Date();
-    if (now < COUNTDOWN_DATE) {
-        if (to.path !== '/countdown') {
-            return next('/countdown');
-        }
-        // If targeting countdown, allow it and skip other checks
-        return next();
-    } else {
-        // If countdown expired and user tries to go to countdown page
-        if (to.path === '/countdown') {
-            return next('/');
-        }
-    }
+    // const now = new Date();
+    // if (now < COUNTDOWN_DATE) {
+    //     if (to.path !== '/countdown') {
+    //         return next('/countdown');
+    //     }
+    //     // If targeting countdown, allow it and skip other checks
+    //     return next();
+    // } else {
+    //     // If countdown expired and user tries to go to countdown page
+    //     if (to.path === '/countdown') {
+    //         return next('/');
+    //     }
+    // }
 
     // Check for key requirement
     if (to.meta.requiresKey) {
