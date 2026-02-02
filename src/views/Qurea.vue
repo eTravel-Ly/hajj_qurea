@@ -16,6 +16,10 @@
              <h1 class="font-bold text-primary text-lg leading-tight">منصة حجاج</h1>
              <p class="text-[10px] text-gray-500">لخدمات الحج والعمرة</p>
           </div>
+          <div v-if="qureaStationName" class="hidden md:block border-r border-gray-200 pr-3 mr-3">
+             <div class="text-xs text-gray-500">محطة القرعة</div>
+             <div class="font-bold text-gray-800 text-sm">{{ qureaStationName }}</div>
+          </div>
         </div>
         
         <!-- Global Stats Ticker -->
@@ -66,17 +70,17 @@
             </button> -->
             
             <!-- Offices List -->
-            <div class="flex-1 overflow-y-auto min-h-0 sidebar-scroll">
+            <div ref="sidebarOfficesContainer" class="flex-1 overflow-y-auto min-h-0 sidebar-scroll">
               <h3 class="text-lg font-bold text-gray-800 mb-3">المكاتب</h3>
               <div class="space-y-3">
                 <div 
                   v-for="office in filteredOffices" 
                   :key="office.id"
-                  @click="selectOffice(office.id)"
+                  :data-office-id="office.id"
                   class="bg-white rounded-lg border-2 p-3 transition-all h-[110px] flex flex-col"
                   :class="[
                     String(office.id) === String(route.params.officeId) ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20' : 'border-gray-200',
-                    isButtonDisabled ? 'opacity-40 pointer-events-none cursor-not-allowed grayscale' : 'cursor-pointer hover:shadow-md'
+                    isButtonDisabled ? 'opacity-40 pointer-events-none cursor-not-allowed grayscale' : ''
                   ]"
                 >
                   <h4 class="font-bold text-base text-gray-800 mb-2">{{ office.name }}</h4>
@@ -331,6 +335,19 @@
                 <span>{{ isPolling ? 'جاري بدء القرعة...' : (isDrawing ? 'جاري السحب...' : lotteryButtonText) }}</span>
               </button>
 
+              <!-- Next Office Button -->
+              <button
+                v-if="showNextButton"
+                @click="handleNextOffice"
+                class="bg-white text-[#D8A764] border-2 border-[#D8A764] px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#D8A764] hover:text-white flex items-center gap-2 transition-all"
+                style="font-family: 'Somar Sans', sans-serif;"
+              >
+                <span>التالي</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1);">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
               <!-- Export PDF Button -->
               <button
                 v-if="winnersQueue.length > 0 || (currentOffice && currentOffice.status === 3)"
@@ -365,6 +382,16 @@
       :message="alertModal.message"
       @close="closeAlert"
     />
+
+    <!-- Coordination and Office Selector Modal -->
+    <CoordinationOfficeSelector
+      :isVisible="showOfficeSelector"
+      :coordinations="centers"
+      :offices="offices"
+      :allowCancel="false"
+      :initialCoordinationId="selectedCenterId"
+      @confirm="handleOfficeSelectionConfirm"
+    />
   </div>
     <!-- Blocking Overlay when animation is running -->
     <div v-if="isButtonDisabled" class="fixed inset-0 z-[9999] cursor-not-allowed"></div> <!-- Blocks all interactions -->
@@ -376,6 +403,7 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { logout } from '../services/auth';
 import AlertModal from '../components/AlertModal.vue';
+import CoordinationOfficeSelector from '../components/CoordinationOfficeSelector.vue';
 import pdfService from '../services/pdfService';
 
 const route = useRoute();
@@ -404,6 +432,7 @@ const officeScrollLeft = ref(0);
 const canScrollRight = ref(false);
 const sidebarVisible = ref(true);
 const winnersListContainer = ref(null);
+const sidebarOfficesContainer = ref(null);
 const officeOrderMap = ref(new Map()); // Store original office order
 
 // Register numbers for animation
@@ -417,6 +446,8 @@ const STORAGE_KEY_PREFIX = 'qurea_state_';
 const POLLING_KEY_PREFIX = 'qurea_polling_office_';
 
 const printingOfficeId = ref(null);
+const showOfficeSelector = ref(false);
+const isLoadingWinners = ref(false); // Prevent duplicate API calls
 
 const alertModal = ref({
     isVisible: false,
@@ -489,11 +520,17 @@ const loadState = () => {
                         }
                     });
 
-                    // If not finished, RESUME loop
-                    if (currentWinnerIndex.value < winnersQueue.value.length - 1) {
+                    // If not finished, RESUME loop - but only if not already animating
+                    if (currentWinnerIndex.value < winnersQueue.value.length - 1 && !isAnimating.value && !isDrawing.value) {
+                        console.log(`[State Resume] Resuming from winner ${currentWinnerIndex.value + 1}/${winnersQueue.value.length}`);
                         setTimeout(() => {
-                            showNextWinnerInLoop();
+                            // Triple-check: not animating, not drawing, and not at last winner
+                            if (!isAnimating.value && !isDrawing.value && currentWinnerIndex.value < winnersQueue.value.length - 1) {
+                                showNextWinnerInLoop();
+                            }
                         }, 1000);
+                    } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
+                        console.log(`[State Resume] At last winner (${currentWinnerIndex.value + 1}/${winnersQueue.value.length}), skipping resume`);
                     }
                 }
                 return true;
@@ -680,7 +717,10 @@ const handleExportPDF = () => {
 
 const filteredOffices = computed(() => {
   if (!selectedCenterId.value) return offices.value;
-  return offices.value.filter(office => office.coordinationId === selectedCenterId.value);
+  // Filter by coordination and sort alphabetically by name
+  return offices.value
+    .filter(office => office.coordinationId === selectedCenterId.value)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
 });
 
 const centerTotalQuota = computed(() => {
@@ -728,6 +768,14 @@ const isLotteryRunning = computed(() => {
 const isButtonDisabled = computed(() => {
   // Disabled while drawing or polling or showing winners or animating (preparing)
   return isDrawing.value || isPolling.value || isAnimating.value || (winnersQueue.value.length > 0 && currentWinnerIndex.value < winnersQueue.value.length - 1 && currentWinnerIndex.value >= 0);
+});
+
+// Get qureaStation name from selected coordination
+const qureaStationName = computed(() => {
+  if (selectedCenter.value && selectedCenter.value.qureaStation) {
+    return selectedCenter.value.qureaStation.name;
+  }
+  return '';
 });
 
 // Button text based on state
@@ -898,22 +946,39 @@ const handleStartLottery = async () => {
 
   // Check if we need to load winners from API
   if (winnersQueue.value.length === 0) {
+    // CRITICAL: Prevent duplicate API calls
+    if (isLoadingWinners.value) {
+      console.warn('[API Guard] Already loading winners, skipping duplicate call');
+      return;
+    }
+    
     // First time load all winners from API
+    isLoadingWinners.value = true; // Set flag to prevent duplicate calls
+    
     try {
+      console.log('[API] Starting lottery for office:', currentOffice.value.id);
       const call = await api.startQurea(currentOffice.value.id);
       if (call.data?.object?.status == 2) {
         startPollingWinners();
         return;
       }
       
+      console.log('[API] Fetching winners for office:', currentOffice.value.id);
       const res = await api.getOfficeWinners(currentOffice.value.id);
       const winners = res.data?.object || [];
       
+      // Special case: quota = 0 (no winners)
       if (!Array.isArray(winners) || winners.length === 0) {
-        showAlert('لا توجد نتائج قرعة حالياً', 'alert', 'تنبيه');
+        console.log('[API] No winners found (quota = 0)');
+        showAlert('لا توجد نتائج قرعة حالياً - الحصة = 0', 'info', 'تنبيه');
+        // Mark office as complete with 0 winners
+        currentOffice.value.status = 3;
+        currentOffice.value.selectedCount = 0;
+        saveState();
         return;
       }
       
+      console.log(`[API] Loaded ${winners.length} winners`);
       winnersQueue.value = winners;
       currentWinnerIndex.value = -1; 
       
@@ -937,6 +1002,9 @@ const handleStartLottery = async () => {
     } catch (error) {
       console.error('Error loading winners:', error);
       return;
+    } finally {
+      // Always reset the flag
+      isLoadingWinners.value = false;
     }
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
     // If at the end, do nothing (button should be disabled anyway)
@@ -1046,7 +1114,13 @@ const startPollingWinners = async () => {
 const showNextWinnerInLoop = async () => {
   // CRITICAL: Prevent multiple simultaneous animation loops
   if (isAnimating.value) {
-    console.warn('Animation already in progress, skipping duplicate call');
+    console.warn('[Animation Guard] Animation already in progress, skipping duplicate call');
+    return;
+  }
+  
+  // Additional guard: Don't start if already drawing
+  if (isDrawing.value) {
+    console.warn('[Animation Guard] Already drawing, skipping duplicate call');
     return;
   }
   
@@ -1056,6 +1130,7 @@ const showNextWinnerInLoop = async () => {
     return; // Stop at the end
   }
   
+  console.log(`[Animation] Starting animation for winner ${currentWinnerIndex.value + 1}/${winnersQueue.value.length}`);
   isAnimating.value = true;
   
   // DON'T increment here - wait until animation completes
@@ -1296,8 +1371,21 @@ const loadCenters = async () => {
     const res = await api.getCoordinations();
     centers.value = res.data?.object || [];
     
-    // Set default center
-    if (centers.value.length > 0) {
+    // Try to restore selected coordination from localStorage
+    const savedCoordinationId = localStorage.getItem('selectedCoordinationId');
+    
+    if (savedCoordinationId && centers.value.length > 0) {
+      const savedCenter = centers.value.find(c => String(c.id) === String(savedCoordinationId));
+      if (savedCenter) {
+        selectedCenterId.value = savedCenter.id;
+        selectedCenter.value = savedCenter;
+      } else {
+        // Fallback to first center if saved one not found
+        selectedCenterId.value = centers.value[0].id;
+        selectedCenter.value = centers.value[0];
+      }
+    } else if (centers.value.length > 0) {
+      // No saved coordination, use first one
       selectedCenterId.value = centers.value[0].id;
       selectedCenter.value = centers.value[0];
     }
@@ -1384,6 +1472,120 @@ watch(currentWinnerIndex, async () => {
     }, 500);
   }
 });
+
+// Watch for office completion to show selector
+watch([currentWinnerIndex, winnersQueue, currentOffice], () => {
+  // Only show selector when ALL offices in current coordination are complete
+  if (
+    currentOffice.value &&
+    currentOffice.value.status === 3 &&
+    winnersQueue.value.length > 0 &&
+    currentWinnerIndex.value >= winnersQueue.value.length - 1 &&
+    !isDrawing.value &&
+    !isPolling.value &&
+    !isAnimating.value
+  ) {
+    // Check if there are more offices in this coordination
+    const coordinationOffices = offices.value.filter(o => o.coordinationId === selectedCenterId.value);
+    const allOfficesComplete = coordinationOffices.every(o => o.status === 3);
+    
+    // Only show selector if all offices in coordination are complete
+    if (allOfficesComplete) {
+      setTimeout(() => {
+        showOfficeSelector.value = true;
+      }, 3000);
+    }
+  }
+}, { deep: true });
+
+// Computed property to show Next button
+const showNextButton = computed(() => {
+  if (!currentOffice.value || !selectedCenterId.value) return false;
+  
+  // Show Next button when current office is complete
+  if (
+    currentOffice.value.status === 3 &&
+    winnersQueue.value.length > 0 &&
+    currentWinnerIndex.value >= winnersQueue.value.length - 1 &&
+    !isDrawing.value &&
+    !isPolling.value
+  ) {
+    // Check if there's a next office in this coordination
+    const coordinationOffices = offices.value
+      .filter(o => o.coordinationId === selectedCenterId.value)
+      .sort((a, b) => a.name.localeCompare(b.name, 'ar')); // Sort alphabetically
+    
+    const currentIndex = coordinationOffices.findIndex(o => String(o.id) === String(currentOffice.value.id));
+    return currentIndex >= 0 && currentIndex < coordinationOffices.length - 1;
+  }
+  
+  return false;
+});
+
+// Handle next office navigation
+const handleNextOffice = () => {
+  if (!currentOffice.value || !selectedCenterId.value) return;
+  
+  // Get all offices for current coordination, sorted alphabetically
+  const coordinationOffices = offices.value
+    .filter(o => o.coordinationId === selectedCenterId.value)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  
+  const currentIndex = coordinationOffices.findIndex(o => String(o.id) === String(currentOffice.value.id));
+  
+  if (currentIndex >= 0 && currentIndex < coordinationOffices.length - 1) {
+    const nextOffice = coordinationOffices[currentIndex + 1];
+    
+    // Navigate to next office
+    router.push(`/qurea/${nextOffice.id}`);
+    
+    // Auto-scroll sidebar to show the next office after a short delay
+    nextTick(() => {
+      setTimeout(() => {
+        if (sidebarOfficesContainer.value) {
+          // Find the office card element by data-office-id attribute
+          const officeCard = sidebarOfficesContainer.value.querySelector(`[data-office-id="${nextOffice.id}"]`);
+          
+          if (officeCard) {
+            // Scroll the office card into view with smooth behavior
+            officeCard.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center'
+            });
+          }
+        }
+      }, 100); // Small delay to ensure DOM is updated
+    });
+  }
+};
+
+// Handle office selection confirmation
+const handleOfficeSelectionConfirm = ({ coordinationId }) => {
+  // Hide the selector
+  showOfficeSelector.value = false;
+  
+  // Update the selected coordination
+  selectedCenterId.value = coordinationId;
+  selectedCenter.value = centers.value.find(c => c.id === coordinationId);
+  
+  // Store in localStorage
+  localStorage.setItem('selectedCoordinationId', coordinationId);
+  
+  // Navigate to the first unfinished office of the new coordination
+  const coordinationOffices = offices.value
+    .filter(o => o.coordinationId === coordinationId)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  
+  if (coordinationOffices.length > 0) {
+    // Find first office that is not completed (status != 3)
+    const firstUnfinishedOffice = coordinationOffices.find(o => o.status !== 3);
+    
+    // If all offices are completed, go to the first one
+    const targetOffice = firstUnfinishedOffice || coordinationOffices[0];
+    
+    router.push(`/qurea/${targetOffice.id}`);
+  }
+};
 
 // Cleanup intervals on unmount
 onUnmounted(() => {

@@ -46,6 +46,15 @@
         </button>
       </form>
     </div>
+
+    <!-- Coordination and Office Selector Modal -->
+    <CoordinationOfficeSelector
+      :isVisible="showSelector"
+      :coordinations="coordinations"
+      :offices="offices"
+      :allowCancel="false"
+      @confirm="handleSelectionConfirm"
+    />
   </div>
 </template>
 
@@ -55,12 +64,16 @@ import { useRouter } from 'vue-router';
 import { login, parseJwt } from '../services/auth';
 import api from '../services/api';
 import { COUNTDOWN_TARGET_DATE } from '../constants';
+import CoordinationOfficeSelector from '../components/CoordinationOfficeSelector.vue';
 
 const router = useRouter();
 const username = ref('');
 const password = ref('');
 const error = ref('');
 const loading = ref(false);
+const showSelector = ref(false);
+const coordinations = ref([]);
+const offices = ref([]);
 
 const handleLogin = async () => {
   loading.value = true;
@@ -92,8 +105,8 @@ const handleLogin = async () => {
         // Get first office ID for countdown query param
         try {
           const officeResponse = await api.getOfficeCrs();
-          const offices = officeResponse.data?.object || [];
-          const firstOfficeId = offices.length > 0 ? offices[0].id : null;
+          const officesList = officeResponse.data?.object || [];
+          const firstOfficeId = officesList.length > 0 ? officesList[0].id : null;
           
           if (firstOfficeId) {
             router.push({ path: '/countdown', query: { officeId: firstOfficeId } });
@@ -111,21 +124,26 @@ const handleLogin = async () => {
       if (roles.includes('qurea-role-indicators')) {
         router.push('/info');
       } else {
-        // Fetch offices and redirect to the first one
+        // Fetch coordinations and offices, then show selector
         try {
-            const officeResponse = await api.getOfficeCrs();
-            const offices = officeResponse.data?.object || []; 
-            
-            if (offices.length > 0) {
-                const firstOfficeId = offices[0].id;
-                router.push(`/qurea/${firstOfficeId}`);
-            } else {
-                console.warn("No offices found, cannot redirect to office ID.");
-                router.push('/'); 
-            }
+          const [coordinationsResponse, officesResponse] = await Promise.all([
+            api.getCoordinations(),
+            api.getOfficeCrs()
+          ]);
+          
+          coordinations.value = coordinationsResponse.data?.object || [];
+          offices.value = officesResponse.data?.object || [];
+          
+          if (offices.value.length === 0) {
+            error.value = 'لا توجد مكاتب متاحة';
+            return;
+          }
+          
+          // Show the selector modal
+          showSelector.value = true;
         } catch (err) {
-            console.error("Failed to fetch offices for redirection:", err);
-            router.push('/');
+          console.error("Failed to fetch coordinations/offices:", err);
+          error.value = 'فشل في تحميل البيانات';
         }
       }
     } else {
@@ -136,6 +154,30 @@ const handleLogin = async () => {
     console.error(e);
   } finally {
     loading.value = false;
+  }
+};
+
+const handleSelectionConfirm = ({ coordinationId }) => {
+  // Store the selected coordination in localStorage for later use
+  localStorage.setItem('selectedCoordinationId', coordinationId);
+  
+  // Find the first unfinished office for this coordination
+  const coordinationOffices = offices.value
+    .filter(office => office.coordinationId === coordinationId)
+    .sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+  
+  if (coordinationOffices.length > 0) {
+    // Find first office that is not completed (status != 3)
+    const firstUnfinishedOffice = coordinationOffices.find(o => o.status !== 3);
+    
+    // If all offices are completed, go to the first one
+    const targetOffice = firstUnfinishedOffice || coordinationOffices[0];
+    
+    // Navigate to the first unfinished office
+    router.push(`/qurea/${targetOffice.id}`);
+  } else {
+    error.value = 'لا توجد مكاتب متاحة لهذه التنسيقية';
+    showSelector.value = false;
   }
 };
 </script>
