@@ -1,16 +1,12 @@
 import pdfMake from '@digicole/pdfmake-rtl/build/pdfmake';
 import pdfFonts from '@digicole/pdfmake-rtl/build/vfs_fonts';
 
-// Standard Initialization for @digicole/pdfmake-rtl
 try {
-    // The library usually exports the VFS as a property or the whole object
     const vfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs || pdfFonts || (pdfFonts && pdfFonts.default);
 
     if (vfs) {
         pdfMake.vfs = vfs;
 
-        // Define fonts available in this build
-        // @digicole/pdfmake-rtl comes with Nillima (for Arabic) and Roboto
         pdfMake.fonts = {
             Nillima: {
                 normal: 'Nillima.ttf',
@@ -68,8 +64,6 @@ class PDFService {
             const totalPages = Math.ceil(winners.length / rowsPerPage);
             const regionText = centerData ? centerData.name : 'المنطقة الوسطى';
 
-            // Prepare table body - Ordered from Right to Left for pdfmake-rtl
-            // Rightmost: Empty, then Phone2, Phone1, Companion, ID, Name, Reg, Leftmost: Num
             const tableBody = [
                 [
                     { text: '', style: 'tableHeader' },

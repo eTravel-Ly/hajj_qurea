@@ -66,7 +66,7 @@
             </button> -->
             
             <!-- Offices List -->
-            <div class="flex-1 overflow-y-auto min-h-0">
+            <div class="flex-1 overflow-y-auto min-h-0 sidebar-scroll">
               <h3 class="text-lg font-bold text-gray-800 mb-3">المكاتب</h3>
               <div class="space-y-3">
                 <div 
@@ -78,7 +78,7 @@
                 >
                   <h4 class="font-bold text-base text-gray-800 mb-2">{{ office.name }}</h4>
                   
-                  <!-- Status section pushed to bottom -->
+                  <!-- Status section  -->
                   <div class="mt-auto flex items-center justify-between">
                     <div class="flex items-center gap-2">
                       <span 
@@ -156,9 +156,9 @@
             <h1 class="text-xl font-bold text-gray-800">قرعة الحج لموسم 1447 هجري - 2026 ميلادي</h1>
           </div>
 
-          <!-- Side-by-Side Layout: Names Card (Left) and Number Card (Right) -->
+          <!-- Side-by-Side Layout: Names Card and Number Card -->
           <div class="flex-grow flex flex-col md:flex-row items-center justify-center gap-8 mb-3 px-6">
-            <!-- Winners List - Left Side -->
+            <!-- Winners List -->
             <div class="w-[420px] md:w-[750px] h-[400px]">
               <div class="bg-white rounded-xl p-6 h-full flex flex-col relative">
                 <!-- Corner Ornaments -->
@@ -215,7 +215,7 @@
               </div>
             </div>
 
-            <!-- Lottery Number Card - Right Side -->
+            <!-- Lottery Number Card -->
             <div class="flex items-center justify-center">
               <div class="bg-[#DCB278] rounded-[20px] p-[8px] shadow-2xl border-[8px] border-white">
                 <div class="bg-gradient-to-br rounded-[12px] w-[200px] md:w-[318px] h-[110px] md:h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
@@ -595,8 +595,6 @@ watch(currentOffice, async (newVal, oldVal) => {
             }
             
             if (hasWinners) {
-                // Winners already exist, loadState should have loaded them
-                // Clear the polling flag since polling is done
                 localStorage.removeItem(POLLING_KEY_PREFIX + newVal.id);
                 // Animation should already be running from loadState
             } else {
@@ -613,8 +611,8 @@ watch(currentOffice, async (newVal, oldVal) => {
 // Animation settings
 //adding emojis to see where the animation config is this is me not ai 😊(😶‍🌫️😶‍🌫️😶‍🌫️😪😪😪😪😫😫😫😫😝😝😝🙃🙃😯😯😌😛😜)
 
-const animationDuration = ref(1); // Total animation duration in seconds
-const numberDisplayDuration = ref(0.05); // How long each number shows in seconds (10ms = 0.01s)
+const animationDuration = ref(1.2); // Total animation duration in seconds
+const numberDisplayDuration = ref(0.03); // How long each number shows in seconds (10ms = 0.01s)
 
 let timeInterval = null;
 let drawingInterval = null;
@@ -651,8 +649,6 @@ const handlePrintOffice = async (office) => {
             return;
         }
         
-        // For current office, we might already have the selectedCenter info
-        // Otherwise, we might need to find it by coordinationId
         let targetCenter = selectedCenter.value;
         if (office.coordinationId && (!targetCenter || String(targetCenter.id) !== String(office.coordinationId))) {
             targetCenter = centers.value.find(c => String(c.id) === String(office.coordinationId));
@@ -1404,6 +1400,24 @@ onUnmounted(() => {
 }
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* Sidebar Scrollbar Styling */
+.sidebar-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: rgba(216, 166, 99, 0.1);
+  border-radius: 10px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(216, 166, 99, 0.3);
 }
 
 @keyframes fade-in {
