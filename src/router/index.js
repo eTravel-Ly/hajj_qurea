@@ -10,9 +10,9 @@ const VALID_ROUTE_KEY = import.meta.env.VITE_ROUTE_KEY || '72054865-9308-4095-99
 const routes = [
     {
         path: '/',
-        name: 'dashboard',
-        component: Dashboard,
-        meta: { requiresKey: false, requiresAuth: true }
+        name: 'login',
+        component: Login,
+        meta: { requiresKey: false, requiresAuth: false }
         // meta: { requiresAuth: true }
     },
     {
@@ -21,12 +21,12 @@ const routes = [
         component: Login,
         meta: { requiresKey: false, requiresAuth: false }
     },
-    {
-        path: '/dashboard',
-        name: 'Dashboard',
-        component: Dashboard,
-        meta: { requiresKey: false, requiresAuth: true }
-    },
+    // {
+    //     path: '/dashboard',
+    //     name: 'Dashboard',
+    //     component: Dashboard,
+    //     meta: { requiresKey: false, requiresAuth: true }
+    // },
     {
         path: '/qurea/:officeId',
         name: 'Qurea',
@@ -45,7 +45,7 @@ const routes = [
         path: '/countdown',
         name: 'Countdown',
         component: () => import('../views/Countdown.vue'), // Lazy load
-        meta: { requiresKey: false, requiresAuth: false }
+        meta: { requiresKey: false, requiresAuth: true }
     }
 ];
 
@@ -58,40 +58,43 @@ const router = createRouter({
 // User requested: 07-02-2020 10 AM +02:00
 // Since 2020 is in the past, we use 2026 (current year) for demonstration.
 // Change year to 2020 if strictly required, but it will expire immediately.
-// const COUNTDOWN_DATE = new Date("2026-02-07T10:00:00+02:00");
+const COUNTDOWN_DATE = new Date("2026-02-02T18:16:30+02:00");
 
 router.beforeEach((to, from, next) => {
-    // Countdown Enforcer
-    const now = new Date();
-    if (now < COUNTDOWN_DATE) {
-        if (to.path !== '/countdown') {
-            return next('/countdown');
-        }
-        // If targeting countdown, allow it and skip other checks
-        return next();
-    } else {
-        // If countdown expired and user tries to go to countdown page
-        if (to.path === '/countdown') {
-            return next('/');
-        }
-    }
-
-    // Check for key requirement
+    // 1. Check for key requirement (Public/Private check)
     if (to.meta.requiresKey) {
         const routeKey = to.query.key;
         if (!routeKey || routeKey !== VALID_ROUTE_KEY) {
-            // Redirect to external URL if key is missing/invalid
             window.location.href = 'http://google.com/';
             return;
         }
     }
 
-    // Check for auth requirement
+    // 2. Check for auth requirement
     if (to.meta.requiresAuth && !authState.isAuthenticated) {
-        next('/login');
-    } else {
-        next();
+        // If not authenticated, redirect to login
+        return next('/login');
     }
+
+    // 3. Countdown Enforcer (Only if authenticated or public route)
+    const now = new Date();
+    // Allow access to login always
+    if (to.path !== '/login') {
+        if (now < COUNTDOWN_DATE) {
+            // Countdown is active
+            if (to.path !== '/countdown') {
+                return next('/countdown');
+            }
+        } else {
+            // Countdown expired
+            if (to.path === '/countdown') {
+                return next('/');
+            }
+        }
+    }
+
+    // 4. Default: allow navigation
+    next();
 });
 
 export default router;

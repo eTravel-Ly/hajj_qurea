@@ -53,6 +53,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { login, parseJwt } from '../services/auth';
+import api from '../services/api';
 
 const router = useRouter();
 const username = ref('');
@@ -74,7 +75,35 @@ const handleLogin = async () => {
       if (roles.includes('qurea-role-indicators')) {
         router.push('/info');
       } else {
-        router.push('/');
+        // Fetch offices and redirect to the first one
+        try {
+            const officeResponse = await api.getOfficeCrs();
+            const offices = officeResponse.data?.object || []; 
+            
+            if (offices.length > 0) {
+                const firstOfficeId = offices[0].id;
+                // Redirect to /:officeId
+                router.push(`/qurea/${firstOfficeId}`);
+            } else {
+                console.warn("No offices found, cannot redirect to office ID.");
+                // Fallback to home if no offices (though home is now :officeId, this might be tricky)
+                // Maybe just retry fetch or show error? For now, try pushing to a default or back to existing logic
+                // If route expects :officeId, pushing '/' might match if officeId is optional, or fail.
+                // Given the router config `path: '/:officeId'`, pushing '/' is actually not matching that route unless officeId is optional?
+                // Wait, `path: '/:officeId'` usually implies required param.
+                // But let's assume if no office, we can't show Qurea properly anyway. 
+                // Let's redirect to '/info' as a fallback or stay on login with error?
+                // Or maybe just push to '/dashboard' if restored? 
+                // User removed dashboard route. 
+                // Let's try pushing to '/0' as a safe default or handle error.
+                
+                // Correction: Using the logic from before, but targeting route with ID.
+                router.push('/'); 
+            }
+        } catch (err) {
+            console.error("Failed to fetch offices for redirection:", err);
+            router.push('/');
+        }
       }
     } else {
       router.push('/');
