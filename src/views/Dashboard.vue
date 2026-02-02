@@ -491,7 +491,6 @@ const selectOffice = (office) => {
     registers.value = [];
     winners.value = [];
     
-    console.log("Selected Office Status:", office.status);
 
     // Default tab logic
     if (office.status === 3) {
@@ -525,7 +524,6 @@ const changePage = (newPage) => {
 const winnersMessage = ref('');
 
 const loadWinners = async (officeId) => {
-    console.log("Fetching Winners for:", officeId);
     loadingWinners.value = true;
     winnersMessage.value = ''; // Reset message
     try {

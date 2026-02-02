@@ -55,8 +55,8 @@ import { useRouter } from 'vue-router';
 import { login, parseJwt } from '../services/auth';
 
 const router = useRouter();
-const username = ref('qurea01');
-const password = ref('udqrrpmyD2q8');
+const username = ref('');
+const password = ref('');
 const error = ref('');
 const loading = ref(false);
 

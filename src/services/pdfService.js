@@ -22,12 +22,10 @@ try {
             }
         };
 
-        console.log('PDFService: pdfmake-rtl initialized successfully with fonts:', Object.keys(pdfMake.fonts));
     } else {
-        console.error('PDFService: Could not initialize VFS');
     }
 } catch (e) {
-    console.error('PDFService: Initialization failed', e);
+    console.error('PDF Initialization failed', e);
 }
 class PDFService {
     constructor() {
@@ -39,7 +37,6 @@ class PDFService {
      * Generate PDF for lottery results with native Arabic/RTL support
      */
     async generateLotteryResultsPDF(officeData, winners, centerData = null) {
-        console.log('PDFService: Generating RTL PDF for winners:', winners);
 
         try {
             if (!officeData) throw new Error('Office data is required');
