@@ -55,7 +55,7 @@ const router = createRouter({
 });
 
 import { COUNTDOWN_TARGET_DATE } from '../constants';
-const COUNTDOWN_DATE = new Date("2026-02-02T18:49:00+02:00");
+const COUNTDOWN_DATE = new Date("2026-02-02T18:54:00+02:00");
 
 router.beforeEach((to, from, next) => {
     // 1. Check for key requirement (Public/Private check)
