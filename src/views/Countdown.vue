@@ -16,7 +16,7 @@
 
       <!-- Title -->
       <h1 class="text-3xl md:text-5xl lg:text-6xl font-bold text-[#03AA77] mb-6 text-center" style="font-family: 'The Year of Handicrafts', sans-serif;">
-        نظام قرعة الحج
+        نظام قرعة الحج لموسم 2026 م - 1447هـ
       </h1>
       
       <p class="text-lg md:text-2xl text-gray-600 mb-12 text-center max-w-2xl leading-relaxed" style="font-family: 'Somar Sans', sans-serif;">
@@ -62,6 +62,21 @@
         </div>
       </div>
 
+      <div v-else-if="isWaiting" class="flex flex-col items-center gap-6">
+        <div v-if="!hasIndicatorRole" class="text-3xl text-[#03AA77] font-bold animate-pulse">
+          في انتظار بدء القرعة...
+        </div>
+        <button
+          v-if="hasIndicatorRole"
+          @click="handleStartQurea"
+          :disabled="isStartingQurea"
+          class="bg-[#03AA77] text-white rounded-2xl font-bold shadow-2xl hover:shadow-3xl hover:bg-[#03AA77] flex flex-col items-center justify-center gap-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          style="font-family: 'Somar Sans', sans-serif; width: 800px; height: 200px;"
+        >
+          <span v-if="!hasIndicatorRole" class="animate-spin w-24 h-24 border-8 border-white/30 border-t-white rounded-full"></span>
+          <span class="text-7xl">{{ isStartingQurea ? 'جاري البدء...' : 'بدء القرعة' }}</span>
+        </button>
+      </div>
       <div v-else class="text-3xl text-[#03AA77] font-bold mb-12 animate-pulse">
         جاري الدخول للنظام...
       </div>
@@ -80,12 +95,22 @@
         &copy; 2026 الهيئة العامة لشؤون الحج والعمرة
     </div>
   </div>
+  
+  <!-- Start Countdown Overlay -->
+  <StartCountdown 
+    :show="showStartCountdown" 
+    :duration="5"
+    @complete="handleCountdownComplete"
+  />
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { COUNTDOWN_TARGET_DATE } from '../constants';
+import api from '../services/api';
+import { parseJwt } from '../services/auth';
+import StartCountdown from '../components/StartCountdown.vue';
 
 const router = useRouter();
 const route = useRoute();
@@ -102,8 +127,26 @@ const minutes = ref(0);
 const seconds = ref(0);
 const expired = ref(false);
 const isLoading = ref(true);
+const isWaiting = ref(false);
+const isStartingQurea = ref(false);
+const showStartCountdown = ref(false);
 let interval = null;
+let statusPollingInterval = null;
 let timeOffset = 0; // Difference between server time and local time (server - local)
+
+// Get user roles from JWT token
+const getUserRoles = () => {
+    const token = localStorage.getItem('app-token');
+    if (!token) return [];
+    const decoded = parseJwt(token);
+    return decoded?.realm_access?.roles || [];
+};
+
+// Check if user has indicator role
+const hasIndicatorRole = computed(() => {
+    const roles = getUserRoles();
+    return roles.includes('qurea-role-indicators');
+});
 
 const fetchServerTime = async () => {
     try {
@@ -137,17 +180,9 @@ const updateTimer = () => {
     days.value = 0; hours.value = 0; minutes.value = 0; seconds.value = 0;
     clearInterval(interval);
     
-    // Redirect to home/login after a brief moment
-    setTimeout(() => {
-        const officeId = route.query.officeId;
-        console.log('Countdown finished. OfficeId:', officeId);
-        if (officeId) {
-            router.push(`/qurea/${officeId}`);
-        } else {
-            console.warn('No officeId found in query, redirecting to login');
-            router.push('/');
-        }
-    }, 1500);
+    // Show waiting state and start polling
+    isWaiting.value = true;
+    startStatusPolling();
     return;
   }
 
@@ -155,6 +190,82 @@ const updateTimer = () => {
   hours.value = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
   minutes.value = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   seconds.value = Math.floor((diff % (1000 * 60)) / 1000);
+};
+
+// Start polling for Qurea status
+const startStatusPolling = async () => {
+    // Clear any existing polling interval
+    if (statusPollingInterval) {
+        clearInterval(statusPollingInterval);
+    }
+    
+    const pollStatus = async () => {
+        try {
+            const response = await api.getQureaStatus();
+            if (response.data?.object?.isStart === true) {
+                // Stop polling
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+                
+                // Show countdown overlay before routing
+                showStartCountdown.value = true;
+            }
+        } catch (error) {
+            console.error('Error polling Qurea status:', error);
+            // Continue polling despite errors
+        }
+    };
+    
+    // Initial call
+    await pollStatus();
+    
+    // Poll every 1 second
+    statusPollingInterval = setInterval(pollStatus, 1000);
+};
+
+// Handle start Qurea button click (for indicator role users)
+const handleStartQurea = async () => {
+    if (isStartingQurea.value) return;
+    
+    try {
+        isStartingQurea.value = true;
+        const response = await api.startQureaStatus();
+        
+        if (response.status === 200) {
+            // Stop current polling if running
+            if (statusPollingInterval) {
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+            }
+            
+            // Show countdown overlay
+            showStartCountdown.value = true;
+        }
+    } catch (error) {
+        console.error('Error starting Qurea:', error);
+        alert('حدث خطأ أثناء بدء القرعة. يرجى المحاولة مرة أخرى.');
+        isStartingQurea.value = false;
+    }
+};
+
+// Handle countdown completion
+const handleCountdownComplete = () => {
+    showStartCountdown.value = false;
+    isStartingQurea.value = false;
+    
+    // Route based on user role
+    if (hasIndicatorRole.value) {
+        router.push('/info');
+    } else {
+        // Regular user - route to Qurea page
+        const officeId = route.query.officeId;
+        if (officeId) {
+            router.push(`/qurea/${officeId}`);
+        } else {
+            console.warn('No officeId found in query, redirecting to login');
+            router.push('/');
+        }
+    }
 };
 
 const startTimer = () => {
@@ -170,6 +281,7 @@ onMounted(() => {
 
 onUnmounted(() => {
     if (interval) clearInterval(interval);
+    if (statusPollingInterval) clearInterval(statusPollingInterval);
 });
 </script>
 

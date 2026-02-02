@@ -42,5 +42,16 @@ export default {
 
     exportcsv() {
         return apiClient.post('/admin/PersonRegisterdForHaj/ExtractCsv')
+    },
+
+    getQureaStatus() {
+        return apiClient.get('/admin/QureaElectronics/status')
+    },
+
+    getQureaStatusindicators() {
+        return apiClient.get('/admin/QureaElectronicsIndicators/status')
+    },
+    startQureaStatus() {
+        return apiClient.post('/admin/QureaElectronicsIndicators/status')
     }
 }

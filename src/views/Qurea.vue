@@ -73,8 +73,11 @@
                   v-for="office in filteredOffices" 
                   :key="office.id"
                   @click="selectOffice(office.id)"
-                  class="bg-white rounded-lg border-2 p-3 transition-all cursor-pointer h-[110px] flex flex-col"
-                  :class="String(office.id) === String(route.params.officeId) ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20' : 'border-gray-200'"
+                  class="bg-white rounded-lg border-2 p-3 transition-all h-[110px] flex flex-col"
+                  :class="[
+                    String(office.id) === String(route.params.officeId) ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20' : 'border-gray-200',
+                    isButtonDisabled ? 'opacity-40 pointer-events-none cursor-not-allowed grayscale' : 'cursor-pointer hover:shadow-md'
+                  ]"
                 >
                   <h4 class="font-bold text-base text-gray-800 mb-2">{{ office.name }}</h4>
                   
@@ -317,11 +320,11 @@
             <div class="flex items-center gap-3">
               <button     
                 @click="handleStartLottery"
-                :disabled="isButtonDisabled || isPolling"
+                :disabled="isButtonDisabled || isPolling || (winnersQueue.length > 0 && currentWinnerIndex >= winnersQueue.length - 1)"
                 class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                 style="font-family: 'Somar Sans', sans-serif;"
               >
-                <svg v-if="!isDrawing && !isPolling && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                <svg v-if="!isDrawing && !isPolling && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1) && !(winnersQueue.length > 0 && currentWinnerIndex >= winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z"/>
                 </svg>
                 <span v-if="isDrawing || isPolling || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
@@ -330,9 +333,9 @@
 
               <!-- Export PDF Button -->
               <button
-                v-if="(winnersQueue.length > 0 || (currentOffice && currentOffice.status === 3)) && (allWinnersShown || !isDrawing)"
+                v-if="winnersQueue.length > 0 || (currentOffice && currentOffice.status === 3)"
                 @click="handleExportPDF"
-                :disabled="printingOfficeId !== null"
+                :disabled="printingOfficeId !== null || isButtonDisabled"
                 class="bg-white text-[#D8A764] border-2 border-[#D8A764] px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#D8A764] hover:text-white flex items-center gap-2 transition-all disabled:opacity-50"
                 style="font-family: 'Somar Sans', sans-serif;"
                 title="تصدير النتائج كملف PDF"
@@ -363,6 +366,8 @@
       @close="closeAlert"
     />
   </div>
+    <!-- Blocking Overlay when animation is running -->
+    <div v-if="isButtonDisabled" class="fixed inset-0 z-[9999] cursor-not-allowed"></div> <!-- Blocks all interactions -->
 </template>
 
 <script setup>
@@ -721,8 +726,8 @@ const isLotteryRunning = computed(() => {
 
 // Button disabled state - only clickable when starting fresh or all winners shown
 const isButtonDisabled = computed(() => {
-  // Disabled while drawing or polling or showing winners
-  return isDrawing.value || isPolling.value || (winnersQueue.value.length > 0 && currentWinnerIndex.value < winnersQueue.value.length - 1 && currentWinnerIndex.value >= 0);
+  // Disabled while drawing or polling or showing winners or animating (preparing)
+  return isDrawing.value || isPolling.value || isAnimating.value || (winnersQueue.value.length > 0 && currentWinnerIndex.value < winnersQueue.value.length - 1 && currentWinnerIndex.value >= 0);
 });
 
 // Button text based on state
@@ -735,7 +740,7 @@ const lotteryButtonText = computed(() => {
   } else if (currentWinnerIndex.value >= 0 && currentWinnerIndex.value < winnersQueue.value.length - 1) {
     return 'جاري السحب...';
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
-    return `تم عرض جميع الفائزين (${winnersQueue.value.length})`;
+    return `تم عرض جميع الفائزين`;
   } else {
     return 'بدأ عرض النتائج';
   }
@@ -773,6 +778,8 @@ const getStatusTextColor = (status) => {
 // Select next office
 const selectNextOffice = () => {
   if (!offices.value.length || !currentOffice.value) return;
+  // Prevent if animation running
+  if (isButtonDisabled.value) return;
   
   const currentIndex = offices.value.findIndex(o => String(o.id) === String(currentOffice.value.id));
   if (currentIndex === -1) return;
@@ -788,6 +795,8 @@ const selectNextOffice = () => {
 // Select previous office
 const selectPreviousOffice = () => {
   if (!offices.value.length || !currentOffice.value) return;
+  // Prevent if animation running
+  if (isButtonDisabled.value) return;
   
   const currentIndex = offices.value.findIndex(o => String(o.id) === String(currentOffice.value.id));
   if (currentIndex === -1) return;
@@ -802,6 +811,7 @@ const selectPreviousOffice = () => {
 
 // Select office by ID
 const selectOffice = (officeId) => {
+  if (isButtonDisabled.value) return;
   router.push(`/qurea/${officeId}`);
 };
 
@@ -884,7 +894,8 @@ const fetchRegisterPage = async (pageNumber) => {
 // Start lottery - Auto loop through all winners
 const handleStartLottery = async () => {
   if (!currentOffice.value || isDrawing.value) return;
-  
+    if (isButtonDisabled.value) return;
+
   // Check if we need to load winners from API
   if (winnersQueue.value.length === 0) {
     // First time load all winners from API
@@ -910,7 +921,8 @@ const handleStartLottery = async () => {
       currentOffice.value.status = 2;
       currentOffice.value.selectedCount = 0;
       saveState(); // Save initial state
-      
+        if (isButtonDisabled.value) return;
+
       // Cache register names for animation
       cachedRegisterNames.value = winners;
       
@@ -918,7 +930,8 @@ const handleStartLottery = async () => {
       registerNumbers.value = [];
       currentRegisterIndex.value = 0;
       currentRegisterPage.value = 1;
-      
+        if (isButtonDisabled.value) return;
+
       // Start the auto-loop
       showNextWinnerInLoop();
     } catch (error) {
@@ -926,17 +939,8 @@ const handleStartLottery = async () => {
       return;
     }
   } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
-    // If at the end, make sure to ask before restarting
-    if (confirm('هل أنت متأكد من إعادة القرعة؟ سيتم عرض الأسماء من البداية.')) {
-        currentWinnerIndex.value = -1;
-        
-        // Reset register numbers for animation
-        registerNumbers.value = [];
-        currentRegisterIndex.value = 0;
-        currentRegisterPage.value = 1;
-        
-        showNextWinnerInLoop();
-    }
+    // If at the end, do nothing (button should be disabled anyway)
+    return;
   } else {
     // Continue from where we left off
     showNextWinnerInLoop();
@@ -959,12 +963,12 @@ const startPollingWinners = async () => {
     try {
       const res = await api.startQurea(pollingOfficeId);
       if (res.data?.object?.status === 3) {
-        // Stop polling
+        // Stop polling interval but keep isPolling true to block UI
         if (pollingInterval) {
           clearInterval(pollingInterval);
           pollingInterval = null;
         }
-        isPolling.value = false;
+        // isPolling.value = false; // DON'T set false yet!
         
         // Clear polling flag from localStorage when completed
         localStorage.removeItem(POLLING_KEY_PREFIX + pollingOfficeId);
@@ -991,6 +995,9 @@ const startPollingWinners = async () => {
           // DOUBLE-CHECK: Ensure we're still on the same office before starting animation
           // This prevents race condition when switching offices at the exact moment polling completes
           setTimeout(() => {
+            // NOW we can release the polling flag, as showNextWinnerInLoop will set isAnimating/isDrawing
+            isPolling.value = false;
+            
             if (currentOffice.value.id === pollingOfficeId) {
               showNextWinnerInLoop();
             } else {
@@ -1005,6 +1012,8 @@ const startPollingWinners = async () => {
             }
           }, 100);
         } else if (currentOffice.value.id !== pollingOfficeId) {
+          isPolling.value = false; // Reset now since we're not starting animation here
+          
           // If we switched offices, just save the winners to localStorage for that office
           // Set currentIndex to -1 so animation starts from beginning when user returns
           const stateToSave = {
@@ -1015,7 +1024,7 @@ const startPollingWinners = async () => {
           };
           localStorage.setItem(STORAGE_KEY_PREFIX + pollingOfficeId, JSON.stringify(stateToSave));
         } else if (winners.length === 0) {
-          showAlert('لم يتم العثور على فائزين بعد توقف القرعة', 'alert', 'تنبيه');
+          isPolling.value = false; // Reset now
         }
       }
     } catch (error) {

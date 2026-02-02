@@ -70,35 +70,11 @@ router.beforeEach((to, from, next) => {
     // 2. Check for auth requirement
     if (to.meta.requiresAuth && !authState.isAuthenticated) {
         // If not authenticated, redirect to login
-
         return next('/login');
     }
 
-    // 3. Countdown Enforcer (Only if authenticated or public route)
-    const now = new Date();
-    // Allow access to login always
-    if (to.path !== '/login') {
-        if (now < COUNTDOWN_DATE) {
-            // Countdown is active
-            if (to.path !== '/countdown') {
-                // If trying to access Qurea page, preserve the officeId in query params
-                if (to.params.officeId) {
-                    return next({ path: '/countdown', query: { officeId: to.params.officeId } });
-                }
-                return next('/countdown');
-            }
-        } else {
-            // Countdown expired
-            if (to.path === '/countdown') {
-                if (to.query.officeId) {
-                    return next(`/qurea/${to.query.officeId}`);
-                }
-                return next('/');
-            }
-        }
-    }
-
-    // 4. Default: allow navigation
+    // 3. Default: allow navigation
+    // Note: Countdown/Qurea routing is now handled by API status check in Login.vue
     next();
 });
 
