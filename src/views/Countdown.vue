@@ -67,11 +67,11 @@
       </div>
       
       <!-- Date Display -->
-      <div class="bg-white/60 backdrop-blur-md px-8 py-3 rounded-full shadow-sm border border-gray-200/50">
+      <!-- <div class="bg-white/60 backdrop-blur-md px-8 py-3 rounded-full shadow-sm border border-gray-200/50">
          <p class="text-[#D8A663] font-bold dir-ltr tracking-wide text-lg" style="direction: ltr; font-family: sans-serif;">
             07-02-2026 10:00 AM (Tripoli Time)
          </p>
-      </div>
+      </div> -->
 
     </div>
     
