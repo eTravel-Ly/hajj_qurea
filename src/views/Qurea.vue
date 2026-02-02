@@ -70,7 +70,7 @@
               <h3 class="text-lg font-bold text-gray-800 mb-3">المكاتب</h3>
               <div class="space-y-3">
                 <div 
-                  v-for="office in offices" 
+                  v-for="office in filteredOffices" 
                   :key="office.id"
                   @click="selectOffice(office.id)"
                   class="bg-white rounded-lg border-2 p-3 transition-all cursor-pointer h-[110px] flex flex-col"
@@ -79,7 +79,7 @@
                   <h4 class="font-bold text-base text-gray-800 mb-2">{{ office.name }}</h4>
                   
                   <!-- Status section pushed to bottom -->
-                  <div class="mt-auto">
+                  <div class="mt-auto flex items-center justify-between">
                     <div class="flex items-center gap-2">
                       <span 
                         class="w-2 h-2 rounded-full"
@@ -89,6 +89,18 @@
                         {{ getStatusText(office.status) }}
                       </span>
                     </div>
+
+                    <button
+                      @click.stop="handlePrintOffice(office)"
+                      :disabled="printingOfficeId !== null"
+                      class="flex items-center justify-center p-1.5 hover:bg-gray-100 rounded-lg transition-colors text-gray-500 hover:text-primary disabled:opacity-50"
+                      title="طباعة النتائج"
+                    >
+                      <span v-if="printingOfficeId == office.id" class="inline-block animate-spin w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full"></span>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                      </svg>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -147,7 +159,7 @@
           <!-- Side-by-Side Layout: Names Card (Left) and Number Card (Right) -->
           <div class="flex-grow flex flex-col md:flex-row items-center justify-center gap-8 mb-3 px-6">
             <!-- Winners List - Left Side -->
-            <div class="w-[420px] md:w-[650px] h-[400px]">
+            <div class="w-[420px] md:w-[750px] h-[400px]">
               <div class="bg-white rounded-xl p-6 h-full flex flex-col relative">
                 <!-- Corner Ornaments -->
                 <span class="corner-ornament corner-tl"></span>
@@ -206,8 +218,8 @@
             <!-- Lottery Number Card - Right Side -->
             <div class="flex items-center justify-center">
               <div class="bg-[#DCB278] rounded-[20px] p-[8px] shadow-2xl border-[8px] border-white">
-                <div class="bg-gradient-to-br rounded-[12px] w-[320px] md:w-[518px] h-[110px] md:h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-                  <p class="text-[55px] md:text-[90px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
+                <div class="bg-gradient-to-br rounded-[12px] w-[200px] md:w-[318px] h-[110px] md:h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+                  <p class="text-[35px] md:text-[70px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
                 </div>
               </div>
             </div>
@@ -302,18 +314,42 @@
             </div>
 
             <!-- Start Lottery Button -->
-            <button     
-              @click="handleStartLottery"
-              :disabled="isButtonDisabled || isPolling"
-              class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-              style="font-family: 'Somar Sans', sans-serif;"
-            >
-              <svg v-if="!isDrawing && !isPolling && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M8 5v14l11-7z"/>
-              </svg>
-              <span v-if="isDrawing || isPolling || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
-              <span>{{ isPolling ? 'جاري بدء القرعة...' : (isDrawing ? 'جاري السحب...' : lotteryButtonText) }}</span>
-            </button>
+            <div class="flex items-center gap-3">
+              <button     
+                @click="handleStartLottery"
+                :disabled="isButtonDisabled || isPolling"
+                class="bg-[#D8A764] text-white px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] flex items-center gap-2 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                style="font-family: 'Somar Sans', sans-serif;"
+              >
+                <svg v-if="!isDrawing && !isPolling && !(currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <span v-if="isDrawing || isPolling || (currentWinnerIndex >= 0 && currentWinnerIndex < winnersQueue.length - 1)" class="animate-spin w-5 h-5 border-2 border-white/30 border-t-white rounded-full"></span>
+                <span>{{ isPolling ? 'جاري بدء القرعة...' : (isDrawing ? 'جاري السحب...' : lotteryButtonText) }}</span>
+              </button>
+
+              <!-- Export PDF Button -->
+              <button
+                v-if="(winnersQueue.length > 0 || (currentOffice && currentOffice.status === 3)) && (allWinnersShown || !isDrawing)"
+                @click="handleExportPDF"
+                :disabled="printingOfficeId !== null"
+                class="bg-white text-[#D8A764] border-2 border-[#D8A764] px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#D8A764] hover:text-white flex items-center gap-2 transition-all disabled:opacity-50"
+                style="font-family: 'Somar Sans', sans-serif;"
+                title="تصدير النتائج كملف PDF"
+              >
+                <template v-if="printingOfficeId != null && printingOfficeId == (currentOffice?.id)">
+                  <span class="animate-spin w-5 h-5 border-2 border-[#D8A764]/30 border-t-[#D8A764] rounded-full"></span>
+                  <span>جاري التحميل...</span>
+                </template>
+                <template v-else>
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6" />
+                  </svg>
+                  <span>طباعة PDF</span>
+                </template>
+              </button>
+            </div>
           </div>
         </div>
       </main>
@@ -335,6 +371,7 @@ import { useRoute, useRouter } from 'vue-router';
 import api from '../services/api';
 import { logout } from '../services/auth';
 import AlertModal from '../components/AlertModal.vue';
+import pdfService from '../services/pdfService';
 
 const route = useRoute();
 const router = useRouter();
@@ -352,6 +389,7 @@ const currentCompanion = ref(null);
 const animatedPilgrimName = ref('');
 const animatedCompanionName = ref('');
 const isDrawing = ref(false);
+const isAnimating = ref(false); // Guard to prevent multiple animation loops
 const isPolling = ref(false);
 const winnersQueue = ref([]);
 const currentWinnerIndex = ref(-1);
@@ -361,6 +399,7 @@ const officeScrollLeft = ref(0);
 const canScrollRight = ref(false);
 const sidebarVisible = ref(true);
 const winnersListContainer = ref(null);
+const officeOrderMap = ref(new Map()); // Store original office order
 
 // Register numbers for animation
 const registerNumbers = ref([]);
@@ -370,6 +409,9 @@ const isLoadingRegisters = ref(false);
 
 // Local Storage Key Prefix
 const STORAGE_KEY_PREFIX = 'qurea_state_';
+const POLLING_KEY_PREFIX = 'qurea_polling_office_';
+
+const printingOfficeId = ref(null);
 
 const alertModal = ref({
     isVisible: false,
@@ -472,7 +514,7 @@ watch([winnersQueue, currentWinnerIndex], () => {
 }, { deep: true });
 
 // Watch for office change to load state
-watch(currentOffice, (newVal) => {
+watch(currentOffice, async (newVal, oldVal) => {
     if (newVal) {
         // Clear any running animation intervals first
         if (drawingInterval) {
@@ -486,6 +528,13 @@ watch(currentOffice, (newVal) => {
             nextWinnerTimeout = null;
         }
         
+        // CRITICAL: Stop polling when switching offices
+        if (pollingInterval) {
+            clearInterval(pollingInterval);
+            pollingInterval = null;
+        }
+        isPolling.value = false;
+        
         // Reset animation state
         isDrawing.value = false;
         animatedPilgrimName.value = '';
@@ -498,7 +547,65 @@ watch(currentOffice, (newVal) => {
         lotteryNumber.value = null;
         
         // Try to load saved state
-        loadState();
+        const stateLoaded = loadState();
+        
+        // If no state was loaded but office is completed (status 3), fetch winners from API
+        if (!stateLoaded && newVal.status === 3) {
+            try {
+                const winnersRes = await api.getOfficeWinners(newVal.id);
+                const winners = winnersRes.data?.object || [];
+                
+                if (Array.isArray(winners) && winners.length > 0) {
+                    winnersQueue.value = winners;
+                    currentWinnerIndex.value = winners.length - 1; // Show all winners
+                    cachedRegisterNames.value = winners;
+                    
+                    // Show the last winner
+                    showCurrentWinner();
+                    
+                    // Save this state
+                    saveState();
+                    
+                    // Scroll to bottom
+                    nextTick(() => {
+                        if (winnersListContainer.value) {
+                            winnersListContainer.value.scrollTop = winnersListContainer.value.scrollHeight;
+                        }
+                    });
+                }
+            } catch (error) {
+                console.error('Error loading winners for completed office:', error);
+            }
+        }
+        
+        // Auto-resume polling if this office was polling (has polling flag in localStorage)
+        const wasPolling = localStorage.getItem(POLLING_KEY_PREFIX + newVal.id);
+        if (wasPolling === 'true') {
+            // Check if winners are already saved (polling completed while away)
+            const saved = localStorage.getItem(STORAGE_KEY_PREFIX + newVal.id);
+            let hasWinners = false;
+            
+            if (saved) {
+                try {
+                    const parsed = JSON.parse(saved);
+                    hasWinners = parsed.winners && Array.isArray(parsed.winners) && parsed.winners.length > 0;
+                } catch (e) {
+                    // ignore
+                }
+            }
+            
+            if (hasWinners) {
+                // Winners already exist, loadState should have loaded them
+                // Clear the polling flag since polling is done
+                localStorage.removeItem(POLLING_KEY_PREFIX + newVal.id);
+                // Animation should already be running from loadState
+            } else {
+                // No winners yet, resume polling
+                setTimeout(() => {
+                    startPollingWinners();
+                }, 500);
+            }
+        }
     }
 });
 
@@ -522,7 +629,59 @@ const toggleSidebar = () => {
     sidebarVisible.value = !sidebarVisible.value;
 };
 
-// Computed properties
+// Export PDF with lottery results for a specific office
+const handlePrintOffice = async (office) => {
+    if (!office) return;
+    
+    // Check if office has finished lottery
+    if (office.status !== 3) {
+        showAlert('القرعة لهذا المكتب لم تنتهي بعد. لا يمكن طباعة النتائج إلا بعد اكتمال السحب.', 'warning', 'تنبيه');
+        return;
+    }
+    
+    try {
+        printingOfficeId.value = office.id;
+        
+        // Fetch fresh winner data for the target office
+        const res = await api.getOfficeWinners(office.id);
+        const winners = res.data?.object || [];
+        
+        if (!Array.isArray(winners) || winners.length === 0) {
+            showAlert('لا توجد نتائج قرعة لتصديرها لهذا المكتب', 'warning', 'تنبيه');
+            return;
+        }
+        
+        // For current office, we might already have the selectedCenter info
+        // Otherwise, we might need to find it by coordinationId
+        let targetCenter = selectedCenter.value;
+        if (office.coordinationId && (!targetCenter || String(targetCenter.id) !== String(office.coordinationId))) {
+            targetCenter = centers.value.find(c => String(c.id) === String(office.coordinationId));
+        }
+        
+        await pdfService.generateLotteryResultsPDF(
+            office,
+            winners,
+            targetCenter
+        );
+        
+    } catch (error) {
+        console.error('Error in handlePrintOffice:', error);
+        showAlert('حدث خطأ أثناء إنشاء ملف PDF', 'error', 'خطأ');
+    } finally {
+        printingOfficeId.value = null;
+    }
+};
+
+// Export PDF with lottery results for current office
+const handleExportPDF = () => {
+    handlePrintOffice(currentOffice.value);
+};
+
+const filteredOffices = computed(() => {
+  if (!selectedCenterId.value) return offices.value;
+  return offices.value.filter(office => office.coordinationId === selectedCenterId.value);
+});
+
 const centerTotalQuota = computed(() => {
   if (selectedCenter.value) {
     return offices.value
@@ -794,9 +953,15 @@ const startPollingWinners = async () => {
   
   isPolling.value = true;
   
+  // Store the office ID we're polling for
+  const pollingOfficeId = currentOffice.value.id;
+  
+  // Mark this office as polling in localStorage
+  localStorage.setItem(POLLING_KEY_PREFIX + pollingOfficeId, 'true');
+  
   const poll = async () => {
     try {
-      const res = await api.startQurea(currentOffice.value.id);
+      const res = await api.startQurea(pollingOfficeId);
       if (res.data?.object?.status === 3) {
         // Stop polling
         if (pollingInterval) {
@@ -805,11 +970,15 @@ const startPollingWinners = async () => {
         }
         isPolling.value = false;
         
+        // Clear polling flag from localStorage when completed
+        localStorage.removeItem(POLLING_KEY_PREFIX + pollingOfficeId);
+        
         // Load winners
-        const winnersRes = await api.getOfficeWinners(currentOffice.value.id);
+        const winnersRes = await api.getOfficeWinners(pollingOfficeId);
         const winners = winnersRes.data?.object || [];
         
-        if (Array.isArray(winners) && winners.length > 0) {
+        // CRITICAL: Only load winners if we're still viewing the same office
+        if (Array.isArray(winners) && winners.length > 0 && currentOffice.value.id === pollingOfficeId) {
           winnersQueue.value = winners;
           currentWinnerIndex.value = -1;
           
@@ -823,8 +992,33 @@ const startPollingWinners = async () => {
           currentRegisterIndex.value = 0;
           currentRegisterPage.value = 1;
           
-          showNextWinnerInLoop();
-        } else {
+          // DOUBLE-CHECK: Ensure we're still on the same office before starting animation
+          // This prevents race condition when switching offices at the exact moment polling completes
+          setTimeout(() => {
+            if (currentOffice.value.id === pollingOfficeId) {
+              showNextWinnerInLoop();
+            } else {
+              // Office changed, save state for the completed office
+              const stateToSave = {
+                winners: winners,
+                currentIndex: -1,
+                officeStatus: 2,
+                selectedCount: 0
+              };
+              localStorage.setItem(STORAGE_KEY_PREFIX + pollingOfficeId, JSON.stringify(stateToSave));
+            }
+          }, 100);
+        } else if (currentOffice.value.id !== pollingOfficeId) {
+          // If we switched offices, just save the winners to localStorage for that office
+          // Set currentIndex to -1 so animation starts from beginning when user returns
+          const stateToSave = {
+            winners: winners,
+            currentIndex: -1, // Start from beginning, not the end
+            officeStatus: 2, // Set to "in progress" so animation will run
+            selectedCount: 0
+          };
+          localStorage.setItem(STORAGE_KEY_PREFIX + pollingOfficeId, JSON.stringify(stateToSave));
+        } else if (winners.length === 0) {
           showAlert('لم يتم العثور على فائزين بعد توقف القرعة', 'alert', 'تنبيه');
         }
       }
@@ -845,10 +1039,19 @@ const startPollingWinners = async () => {
 
 // Show next winner in automatic loop
 const showNextWinnerInLoop = async () => {
+  // CRITICAL: Prevent multiple simultaneous animation loops
+  if (isAnimating.value) {
+    console.warn('Animation already in progress, skipping duplicate call');
+    return;
+  }
+  
   // Check if we've reached the end
   if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
+    isAnimating.value = false;
     return; // Stop at the end
   }
+  
+  isAnimating.value = true;
   
   // DON'T increment here - wait until animation completes
   
@@ -958,6 +1161,9 @@ const showNextWinnerInLoop = async () => {
         animatedPilgrimName.value = '';
         animatedCompanionName.value = '';
         
+        // Release the animation lock
+        isAnimating.value = false;
+        
         // Auto-continue to next winner after 2 seconds
         nextWinnerTimeout = setTimeout(() => {
           if (currentWinnerIndex.value < winnersQueue.value.length - 1) {
@@ -972,6 +1178,7 @@ const showNextWinnerInLoop = async () => {
     isDrawing.value = false;
     animatedPilgrimName.value = '';
     animatedCompanionName.value = '';
+    isAnimating.value = false; // Release lock on error
   }
 };
 
@@ -994,9 +1201,11 @@ const showCurrentWinner = () => {
     // Update selected count
     currentOffice.value.selectedCount = currentWinnerIndex.value + 1;
     
-    // Check if finished 
+    // ONLY set status to 3 when ALL winners have been shown (animation complete)
+    // This ensures status doesn't change to "completed" while still animating
     if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
         currentOffice.value.status = 3;
+        saveState(); // Save the completed state
     }
   }
 };
@@ -1006,7 +1215,46 @@ const loadOffices = async () => {
   try {
     const res = await api.getOfficeCrs();
     const rawOffices = res.data?.object || [];
-    offices.value = Array.isArray(rawOffices) ? rawOffices : (rawOffices.list || []);
+    let fetchedOffices = Array.isArray(rawOffices) ? rawOffices : (rawOffices.list || []);
+    
+    // CRITICAL: Store current status of polling offices BEFORE updating
+    const pollingOfficeStatuses = new Map();
+    if (offices.value.length > 0) {
+      offices.value.forEach(office => {
+        const isPolling = localStorage.getItem(POLLING_KEY_PREFIX + office.id) === 'true';
+        if (isPolling) {
+          pollingOfficeStatuses.set(office.id, {
+            status: office.status,
+            selectedCount: office.selectedCount
+          });
+        }
+      });
+    }
+    
+    // If this is the first load, store the original order
+    if (officeOrderMap.value.size === 0) {
+      fetchedOffices.forEach((office, index) => {
+        officeOrderMap.value.set(office.id, index);
+      });
+    } else {
+      // Sort offices according to the original order
+      fetchedOffices.sort((a, b) => {
+        const orderA = officeOrderMap.value.get(a.id) ?? 999999;
+        const orderB = officeOrderMap.value.get(b.id) ?? 999999;
+        return orderA - orderB;
+      });
+    }
+    
+    // Restore status for polling offices BEFORE assigning to offices.value
+    fetchedOffices.forEach(office => {
+      if (pollingOfficeStatuses.has(office.id)) {
+        const saved = pollingOfficeStatuses.get(office.id);
+        office.status = saved.status;
+        office.selectedCount = saved.selectedCount;
+      }
+    });
+    
+    offices.value = fetchedOffices;
     
     // Find current office
     currentOffice.value = offices.value.find(o => String(o.id) === String(route.params.officeId));
@@ -1015,17 +1263,21 @@ const loadOffices = async () => {
     offices.value.forEach(office => {
       // Check local storage for saved status/count
       const saved = localStorage.getItem(STORAGE_KEY_PREFIX + office.id);
-      if (saved) {
+      const isCurrentlyPolling = localStorage.getItem(POLLING_KEY_PREFIX + office.id) === 'true';
+      
+      if (saved && !isCurrentlyPolling) {
         try {
            const parsed = JSON.parse(saved);
-           if (parsed.officeStatus !== undefined) office.status = parsed.officeStatus;
+           if (parsed.officeStatus !== undefined) {
+             office.status = parsed.officeStatus;
+           }
            if (parsed.selectedCount !== undefined) office.selectedCount = parsed.selectedCount;
         } catch (e) {
             // ignore error
         }
       }
 
-      if (!office.selectedCount) {
+      if (!office.selectedCount && !isCurrentlyPolling) {
         office.selectedCount = office.status === 3 ? office.quota : 0;
       }
     });

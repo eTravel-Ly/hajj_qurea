@@ -272,7 +272,7 @@
                             <!-- Companion Section -->
                             <div>
                                 <div class="flex justify-between items-start mb-2">
-                                    <h4 class="font-bold text-gray-800 text-lg">{{ winner.companionHajj || 'لا يوجد مرافق' }}</h4>
+                                    <h4 class="font-bold text-gray-800 text-lg" :class="{ 'opacity-40': !winner.companionHajj }">{{ winner.companionHajj || 'لا يوجد مرافق' }}</h4>
                                     <span class="bg-secondary/10 text-secondary text-xs px-2 py-1 rounded font-bold">مرافق</span>
                                 </div>
                             </div>
