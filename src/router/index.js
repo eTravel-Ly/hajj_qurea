@@ -62,19 +62,19 @@ const router = createRouter({
 
 router.beforeEach((to, from, next) => {
     // Countdown Enforcer
-    // const now = new Date();
-    // if (now < COUNTDOWN_DATE) {
-    //     if (to.path !== '/countdown') {
-    //         return next('/countdown');
-    //     }
-    //     // If targeting countdown, allow it and skip other checks
-    //     return next();
-    // } else {
-    //     // If countdown expired and user tries to go to countdown page
-    //     if (to.path === '/countdown') {
-    //         return next('/');
-    //     }
-    // }
+    const now = new Date();
+    if (now < COUNTDOWN_DATE) {
+        if (to.path !== '/countdown') {
+            return next('/countdown');
+        }
+        // If targeting countdown, allow it and skip other checks
+        return next();
+    } else {
+        // If countdown expired and user tries to go to countdown page
+        if (to.path === '/countdown') {
+            return next('/');
+        }
+    }
 
     // Check for key requirement
     if (to.meta.requiresKey) {
