@@ -52,8 +52,11 @@
       :isVisible="showSelector"
       :coordinations="coordinations"
       :offices="offices"
-      :allowCancel="false"
+      :allowCancel="true"
+      :exportingId="exportingCoordinationId"
       @confirm="handleSelectionConfirm"
+      @cancel="showSelector = false"
+      @export-all="handleExportAllCoordinationPDFs"
     />
   </div>
 </template>
@@ -65,6 +68,7 @@ import { login, parseJwt } from '../services/auth';
 import api from '../services/api';
 import { COUNTDOWN_TARGET_DATE } from '../constants';
 import CoordinationOfficeSelector from '../components/CoordinationOfficeSelector.vue';
+import pdfService from '../services/pdfService';
 
 const router = useRouter();
 const username = ref('');
@@ -74,6 +78,7 @@ const loading = ref(false);
 const showSelector = ref(false);
 const coordinations = ref([]);
 const offices = ref([]);
+const exportingCoordinationId = ref(null); // Track exporting state
 
 const handleLogin = async () => {
   loading.value = true;
@@ -178,6 +183,67 @@ const handleSelectionConfirm = ({ coordinationId }) => {
   } else {
     error.value = 'لا توجد مكاتب متاحة لهذه التنسيقية';
     showSelector.value = false;
+  }
+};
+
+// Handle export of all completed offices for a coordination
+const handleExportAllCoordinationPDFs = async (coordinationId) => {
+  if (!coordinationId) return;
+  
+  exportingCoordinationId.value = coordinationId;
+  
+  try {
+    // Get all offices for this coordination
+    const coordinationOffices = offices.value
+      .filter(o => o.coordinationId === coordinationId)
+      .sort((a, b) => a.id - b.id);
+      
+    if (coordinationOffices.length === 0) {
+      error.value = 'لا توجد مكاتب لهذه التنسيقية';
+      return;
+    }
+
+    // Get coordination info
+    const coordination = coordinations.value.find(c => c.id === coordinationId);
+    let exportedCount = 0;
+
+    // Process each office
+    for (const office of coordinationOffices) {
+      try {
+        // Fetch fresh winner data for ALL offices (regardless of status)
+        const res = await api.getOfficeWinners(office.id);
+        const winners = res.data?.object || [];
+        
+        // Only generate PDF if we actually have winners
+        if (Array.isArray(winners) && winners.length > 0) {
+          await pdfService.generateLotteryResultsPDF(
+             office,
+             winners,
+             coordination
+          );
+          exportedCount++;
+          
+          // Add a small delay between downloads to prevent browser blocking
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      } catch (e) {
+        console.error(`Error exporting office ${office.name}:`, e);
+      }
+    }
+    
+    if (exportedCount === 0) {
+      error.value = 'لا توجد مكاتب مكتملة لتصديرها';
+    }
+    
+  } catch (err) {
+    console.error('Error in bulk export:', err);
+    error.value = 'حدث خطأ أثناء التصدير';
+  } finally {
+    exportingCoordinationId.value = null;
+    // Clear error after 3 seconds if it was an export error
+    if (error.value && (error.value.includes('تصدير') || error.value.includes('مكاتب'))) {
+      setTimeout(() => { error.value = ''; }, 3000);
+    }
   }
 };
 </script>

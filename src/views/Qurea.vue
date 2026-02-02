@@ -388,9 +388,12 @@
       :isVisible="showOfficeSelector"
       :coordinations="centers"
       :offices="offices"
-      :allowCancel="false"
+      :allowCancel="true"
       :initialCoordinationId="selectedCenterId"
+      :exportingId="exportingCoordinationId"
       @confirm="handleOfficeSelectionConfirm"
+      @cancel="handleLogout"
+      @export-all="handleExportAllCoordinationPDFs"
     />
   </div>
     <!-- Blocking Overlay when animation is running -->
@@ -422,6 +425,7 @@ const currentCompanion = ref(null);
 const animatedPilgrimName = ref('');
 const animatedCompanionName = ref('');
 const isDrawing = ref(false);
+const exportingCoordinationId = ref(null); // To track bulk export loading state
 const isAnimating = ref(false); // Guard to prevent multiple animation loops
 const isPolling = ref(false);
 const winnersQueue = ref([]);
@@ -713,6 +717,67 @@ const handlePrintOffice = async (office) => {
 // Export PDF with lottery results for current office
 const handleExportPDF = () => {
     handlePrintOffice(currentOffice.value);
+};
+
+// Handle export of all completed offices for a coordination
+const handleExportAllCoordinationPDFs = async (coordinationId) => {
+  if (!coordinationId) return;
+  
+  exportingCoordinationId.value = coordinationId;
+  
+  try {
+    // Get all offices for this coordination
+    const coordinationOffices = offices.value
+      .filter(o => o.coordinationId === coordinationId)
+      .sort((a, b) => a.id - b.id);
+      
+    if (coordinationOffices.length === 0) {
+      showAlert('لا توجد مكاتب لهذه التنسيقية', 'warning', 'تنبيه');
+      return;
+    }
+
+    // Get coordination info
+    const coordination = centers.value.find(c => c.id === coordinationId);
+    let exportedCount = 0;
+
+    // Process each office
+    for (const office of coordinationOffices) {
+      try {
+        // Fetch fresh winner data for ALL offices (regardless of status, just in case)
+        const res = await api.getOfficeWinners(office.id);
+        const winners = res.data?.object || [];
+        
+        // Only generate PDF if we actually have winners
+        if (Array.isArray(winners) && winners.length > 0) {
+          await pdfService.generateLotteryResultsPDF(
+             office,
+             winners,
+             coordination // Use original center object if available
+          );
+          exportedCount++;
+          
+          // Add a small delay between downloads to prevent browser blocking
+          await new Promise(resolve => setTimeout(resolve, 800));
+        }
+      } catch (e) {
+        console.error(`Error exporting office ${office.name}:`, e);
+        // Continue to next office even if one fails
+      }
+    }
+    
+    if (exportedCount === 0) {
+      showAlert('لا توجد مكاتب مكتملة لتصديرها', 'warning', 'تنبيه');
+    } else {
+      // Optional: Show success message?
+      // showAlert(`تم تصدير ${exportedCount} ملفات`, 'success', 'نجاح');
+    }
+    
+  } catch (err) {
+    console.error('Error in bulk export:', err);
+    showAlert('حدث خطأ أثناء التصدير', 'error', 'خطأ');
+  } finally {
+    exportingCoordinationId.value = null;
+  }
 };
 
 const filteredOffices = computed(() => {

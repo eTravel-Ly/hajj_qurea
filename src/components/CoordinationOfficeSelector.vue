@@ -26,7 +26,23 @@
                 <h4 class="font-bold text-lg text-gray-800">{{ coordination.name }}</h4>
                 <p v-if="isCoordinationCompleted(coordination.id)" class="text-sm text-gray-500 mt-1">مكتمل</p>
               </div>
-              <div v-if="isCoordinationCompleted(coordination.id)" class="flex-shrink-0">
+              <div v-if="isCoordinationCompleted(coordination.id)" class="flex-shrink-0 flex items-center gap-2">
+                <!-- Export All PDFs Button -->
+                <button
+                  @click.stop="handleExportAll(coordination.id)"
+                  :disabled="exportingId === coordination.id"
+                  class="p-2 rounded-lg hover:bg-green-100 transition-colors disabled:opacity-50"
+                  title="تصدير جميع ملفات PDF"
+                >
+                  <svg v-if="exportingId === coordination.id" class="animate-spin h-6 w-6 text-green-600" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </button>
+                <!-- Green Checkmark -->
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -85,10 +101,14 @@ const props = defineProps({
   initialCoordinationId: {
     type: [Number, String],
     default: null
+  },
+  exportingId: {
+    type: [Number, String],
+    default: null
   }
 });
 
-const emit = defineEmits(['confirm', 'cancel']);
+const emit = defineEmits(['confirm', 'cancel', 'export-all']);
 
 const selectedCoordinationId = ref(props.initialCoordinationId);
 
@@ -135,6 +155,10 @@ const handleConfirm = () => {
 
 const handleCancel = () => {
   emit('cancel');
+};
+
+const handleExportAll = (coordinationId) => {
+  emit('export-all', coordinationId);
 };
 
 const handleBackdropClick = () => {
