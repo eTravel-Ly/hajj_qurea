@@ -1,5 +1,11 @@
 <template>
   <div class="min-h-screen flex flex-col items-center justify-center bg-[#F9FAFB] relative overflow-hidden font-sans" dir="rtl">
+    <div class="absolute top-6 left-6 z-50">
+      <button @click="logout" class="p-2 bg-white/80 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors shadow-sm border border-gray-100" title="تسجيل الخروج">
+        <img src="/logout-02.png" alt="Logout" class="h-5 w-5" />
+      </button>
+    </div>
+
     
     <!-- Background Pattern/Gradient -->
     <div class="absolute inset-0 z-0 opacity-5">
@@ -70,11 +76,17 @@
           v-if="hasIndicatorRole"
           @click="handleStartQurea"
           :disabled="isStartingQurea"
-          class="bg-[#03AA77] text-white rounded-2xl font-bold shadow-2xl hover:shadow-3xl hover:bg-[#03AA77] flex flex-col items-center justify-center gap-6 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          class="bg-[#03AA77] text-white rounded-2xl font-bold shadow-2xl hover:shadow-3xl hover:bg-[#03AA77] flex flex-col items-center justify-center gap-4 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer group"
           style="font-family: 'Somar Sans', sans-serif; width: 800px; height: 200px;"
         >
-          <span v-if="!hasIndicatorRole" class="animate-spin w-24 h-24 border-8 border-white/30 border-t-white rounded-full"></span>
-          <span class="text-7xl">{{ isStartingQurea ? 'جاري البدء...' : 'بدء القرعة' }}</span>
+          <div v-if="!isStartingQurea" class="bg-white/20 p-4 rounded-full group-hover:scale-110 transition-transform duration-300">
+             <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-white pl-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+             </svg>
+          </div>
+          <span v-if="isStartingQurea" class="animate-spin w-16 h-16 border-4 border-white/30 border-t-white rounded-full"></span>
+          <span class="text-6xl">{{ isStartingQurea ? 'جاري البدء...' : 'بدء القرعة' }}</span>
         </button>
       </div>
       <div v-else class="text-3xl text-[#03AA77] font-bold mb-12 animate-pulse">
@@ -109,7 +121,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { COUNTDOWN_TARGET_DATE } from '../constants';
 import api from '../services/api';
-import { parseJwt } from '../services/auth';
+import { parseJwt, logout } from '../services/auth';
 import StartCountdown from '../components/StartCountdown.vue';
 
 const router = useRouter();
@@ -201,6 +213,7 @@ const startStatusPolling = async () => {
     
     const pollStatus = async () => {
         try {
+          if(!hasIndicatorRole.value){
             const response = await api.getQureaStatus();
             if (response.data?.object?.isStart === true) {
                 // Stop polling
@@ -210,6 +223,17 @@ const startStatusPolling = async () => {
                 // Show countdown overlay before routing
                 showStartCountdown.value = true;
             }
+          } else {
+            const response = await api.getQureaStatusindicators();
+            if (response.data?.object?.isStart === true) {
+                // Stop polling
+                clearInterval(statusPollingInterval);
+                statusPollingInterval = null;
+                
+                // Show countdown overlay before routing
+                showStartCountdown.value = true;
+            }
+          }
         } catch (error) {
             console.error('Error polling Qurea status:', error);
             // Continue polling despite errors

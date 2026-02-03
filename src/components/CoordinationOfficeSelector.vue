@@ -1,10 +1,14 @@
 <template>
   <div v-if="isVisible" class="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 backdrop-blur-sm" @click.self="handleBackdropClick">
-    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all" @click.stop>
+    <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-md w-full mx-4 transform transition-all" @click.stop dir="rtl">
       <!-- Header -->
       <div class="text-center mb-6">
-        <h2 class="text-2xl font-bold text-gray-800 mb-2">اختر التنسيقية</h2>
-        <p class="text-gray-500">يرجى اختيار التنسيقية للبدء في القرعة</p>
+        <h2 class="text-2xl font-bold text-gray-800 mb-2">
+          {{ selectedCoordinationName || 'اختر التنسيقية' }}
+        </h2>
+        <p class="text-gray-500">
+          {{ selectedCoordinationName ? 'يرجى التأكيد للبدء أو العرض' : 'يرجى اختيار التنسيقية للبدء في القرعة' }}
+        </p>
       </div>
 
       <!-- Coordination Selector -->
@@ -14,17 +18,19 @@
           <div 
             v-for="coordination in coordinations" 
             :key="coordination.id"
-            @click="isCoordinationCompleted(coordination.id) ? null : selectCoordination(coordination.id)"
+            @click="selectCoordination(coordination.id)"
             class="bg-white rounded-lg border-2 p-4 transition-all"
             :class="[
               selectedCoordinationId === coordination.id ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20 bg-[#D8A663]/5' : 'border-gray-200',
-              isCoordinationCompleted(coordination.id) ? 'border-green-500 bg-green-50 cursor-not-allowed' : 'cursor-pointer hover:shadow-md'
+              isCoordinationCompleted(coordination.id) ? 'border-green-500 bg-green-50' : 'cursor-pointer hover:shadow-md',
+              'cursor-pointer hover:shadow-md'
             ]"
           >
             <div class="flex items-center justify-between">
               <div class="flex-1">
                 <h4 class="font-bold text-lg text-gray-800">{{ coordination.name }}</h4>
-                <p v-if="isCoordinationCompleted(coordination.id)" class="text-sm text-gray-500 mt-1">مكتمل</p>
+                <p v-if="isCoordinationCompleted(coordination.id)" class="text-sm text-green-600 mt-1 font-medium">مكتمل</p>
+                <p v-if="String(initialCoordinationId) === String(coordination.id)" class="text-sm text-[#D8A663] mt-1 font-bold">التنسيقية الحالية</p>
               </div>
               <div v-if="isCoordinationCompleted(coordination.id)" class="flex-shrink-0 flex items-center gap-2">
                 <!-- Export All PDFs Button -->
@@ -71,7 +77,7 @@
           :disabled="!selectedCoordinationId"
           class="bg-[#D8A764] text-white px-8 py-3 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-[#C89654] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          بدء القرعة
+          {{ confirmButtonText }}
         </button>
       </div>
     </div>
@@ -79,7 +85,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, watch, computed } from 'vue';
 
 const props = defineProps({
   isVisible: {
@@ -140,6 +146,17 @@ const isCoordinationCompleted = (coordinationId) => {
   // Check if all offices are completed (status 3)
   return coordinationOffices.every(o => o.status === 3);
 };
+
+const confirmButtonText = computed(() => {
+  if (!selectedCoordinationId.value) return 'بدء القرعة';
+  return isCoordinationCompleted(selectedCoordinationId.value) ? 'عرض القرعه' : 'بدأ القرعة';
+});
+
+const selectedCoordinationName = computed(() => {
+  if (!selectedCoordinationId.value || !props.coordinations) return '';
+  const coordination = props.coordinations.find(c => String(c.id) === String(selectedCoordinationId.value));
+  return coordination ? coordination.name : '';
+});
 
 const selectCoordination = (coordinationId) => {
   selectedCoordinationId.value = coordinationId;

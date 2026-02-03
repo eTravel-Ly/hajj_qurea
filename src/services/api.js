@@ -53,5 +53,9 @@ export default {
     },
     startQureaStatus() {
         return apiClient.post('/admin/QureaElectronicsIndicators/status')
+    },
+
+    getIndicatorsStation() {
+        return apiClient.get('/admin/QureaElectronicsIndicators/Station')
     }
 }

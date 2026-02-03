@@ -79,6 +79,7 @@ const showSelector = ref(false);
 const coordinations = ref([]);
 const offices = ref([]);
 const exportingCoordinationId = ref(null); // Track exporting state
+const qureaStarted = ref(false); // Persistent status for selection logic
 
 const handleLogin = async () => {
   loading.value = true;
@@ -91,65 +92,60 @@ const handleLogin = async () => {
       const decoded = parseJwt(data.access_token);
       const roles = decoded?.realm_access?.roles || [];
       
-      if (roles.includes('qurea-role-indicators')) {
-        await api.getQureaStatusindicators();
-      }
-      // Check Qurea status first
-      let qureaStarted = false;
+      const hasIndicatorRole = roles.includes('qurea-role-indicators');
+      
+      // Check Qurea status based on user role
+      let qureaStartedResult = false;
       try {
-        const statusResponse = await api.getQureaStatus();
-        qureaStarted = statusResponse.data?.object?.isStart === true;
+        let statusResponse;
+        if (hasIndicatorRole) {
+          // Indicators use their own status endpoint
+          statusResponse = await api.getQureaStatusindicators();
+        } else {
+          // Regular users use the standard status endpoint
+          statusResponse = await api.getQureaStatus();
+        }
+        qureaStartedResult = statusResponse.data?.object?.isStart === true;
       } catch (err) {
         console.error('Failed to check Qurea status:', err);
         // If status check fails, assume not started and route to countdown
-        qureaStarted = false;
+        qureaStartedResult = false;
       }
       
-      // If Qurea hasn't started, route to countdown
-      if (!qureaStarted) {
-        // Get first office ID for countdown query param
-        try {
-          const officeResponse = await api.getOfficeCrs();
-          const officesList = officeResponse.data?.object || [];
-          const firstOfficeId = officesList.length > 0 ? officesList[0].id : null;
-          
-          if (firstOfficeId) {
-            router.push({ path: '/countdown', query: { officeId: firstOfficeId } });
-          } else {
-            router.push('/countdown');
-          }
-        } catch (err) {
-          console.error('Failed to fetch offices:', err);
+      // Role-based redirection logic
+      if (hasIndicatorRole) {
+        if (!qureaStartedResult) {
           router.push('/countdown');
+        } else {
+          router.push('/info');
         }
         return;
       }
       
-      // Qurea has started - proceed with role-based routing
-      if (roles.includes('qurea-role-indicators')) {
-        router.push('/info');
-      } else {
-        // Fetch coordinations and offices, then show selector
-        try {
-          const [coordinationsResponse, officesResponse] = await Promise.all([
-            api.getCoordinations(),
-            api.getOfficeCrs()
-          ]);
-          
-          coordinations.value = coordinationsResponse.data?.object || [];
-          offices.value = officesResponse.data?.object || [];
-          
-          if (offices.value.length === 0) {
-            error.value = 'لا توجد مكاتب متاحة';
-            return;
-          }
-          
-          // Show the selector modal
-          showSelector.value = true;
-        } catch (err) {
-          console.error("Failed to fetch coordinations/offices:", err);
-          error.value = 'فشل في تحميل البيانات';
+      // Regular users: Fetch coordinations and offices, then show selector
+      // This is mandatory regardless of whether Qurea has started
+      try {
+        const [coordinationsResponse, officesResponse] = await Promise.all([
+          api.getCoordinations(),
+          api.getOfficeCrs()
+        ]);
+        
+        coordinations.value = coordinationsResponse.data?.object || [];
+        offices.value = officesResponse.data?.object || [];
+        
+        if (offices.value.length === 0) {
+          error.value = 'لا توجد مكاتب متاحة';
+          return;
         }
+        
+        // Store the status for use in handleSelectionConfirm
+        qureaStarted.value = qureaStartedResult;
+        
+        // Show the selector modal
+        showSelector.value = true;
+      } catch (err) {
+        console.error("Failed to fetch coordinations/offices:", err);
+        error.value = 'فشل في تحميل البيانات';
       }
     } else {
       router.push('/');
@@ -178,8 +174,12 @@ const handleSelectionConfirm = ({ coordinationId }) => {
     // If all offices are completed, go to the first one
     const targetOffice = firstUnfinishedOffice || coordinationOffices[0];
     
-    // Navigate to the first unfinished office
-    router.push(`/qurea/${targetOffice.id}`);
+    // Navigate based on qureaStarted status
+    if (qureaStarted.value) {
+      router.push(`/qurea/${targetOffice.id}`);
+    } else {
+      router.push({ path: '/countdown', query: { officeId: targetOffice.id } });
+    }
   } else {
     error.value = 'لا توجد مكاتب متاحة لهذه التنسيقية';
     showSelector.value = false;

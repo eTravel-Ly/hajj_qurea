@@ -1,164 +1,192 @@
 <template>
     <div class="min-h-screen flex flex-col bg-[#FEFAF7] font-sans" dir="rtl">
       <!-- Top Navigation -->
-      <header class="bg-white shadow-sm z-20 flex-shrink-0 h-16 flex justify-between items-center px-6">
-        <div class="flex items-center gap-3">
-          <!-- Sidebar Toggle Button -->
+      <header class="bg-white shadow-sm z-20 flex-shrink-0 h-14 sm:h-16 lg:h-20 xl:h-24 3xl:h-28 flex justify-between items-center px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12 3xl:px-16">
+        <div class="flex items-center gap-2 sm:gap-3 3xl:gap-4">
           <div>
-             <h1 class="font-bold text-primary text-lg leading-tight">منصة حجاج</h1>
-             <p class="text-[10px] text-gray-500">لخدمات الحج والعمرة</p>
+             <h1 class="font-bold text-primary text-base sm:text-lg lg:text-xl xl:text-2xl 3xl:text-3xl leading-tight">منصة حجاج</h1>
+             <p class="text-[9px] sm:text-[10px] lg:text-[11px] xl:text-[12px] 3xl:text-[14px] text-gray-500">لخدمات الحج والعمرة</p>
           </div>
         </div>
         
-        <!-- Global Stats Placeholder -->
-        <div class="hidden md:flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
-            <div class="flex items-center gap-2">
-               <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-               <span class="text-xs text-gray-400">إجمالي الحجاج</span>
-               <span class="font-bold text-gray-700 font-mono text-lg">{{ indicators.totalPilgrims.toLocaleString() }}</span>
+        <!-- Global Stats  -->
+        <div class="hidden md:flex items-center gap-3 lg:gap-4 xl:gap-6 3xl:gap-8 bg-gray-50 px-3 lg:px-4 xl:px-6 3xl:px-8 py-1.5 lg:py-2 xl:py-3 3xl:py-4 rounded-lg border border-gray-100">
+            <div class="flex items-center gap-1.5 lg:gap-2 3xl:gap-3">
+               <span class="w-1.5 h-1.5 lg:w-2 lg:h-2 xl:w-2.5 xl:h-2.5 3xl:w-3 3xl:h-3 rounded-full bg-primary animate-pulse"></span>
+               <span class="text-[10px] lg:text-xs xl:text-sm 3xl:text-base text-gray-400">إجمالي الحجاج</span>
+               <span class="font-bold text-gray-700 font-mono text-sm lg:text-base xl:text-lg 3xl:text-xl">{{ indicators.totalPilgrims.toLocaleString() }}</span>
             </div>
-             <div class="w-px h-4 bg-gray-300"></div>
+            <div class="w-px h-3 lg:h-4 xl:h-5 3xl:h-6 bg-gray-300"></div>
             <!-- Auto Refresh Controls -->
-            <div class="flex items-center gap-3 bg-white px-3 py-1 rounded-md border border-gray-200">
-                <span class="text-[10px] text-gray-500 font-medium">تحديث تلقائي:</span>
+            <div class="hidden lg:flex items-center gap-2 xl:gap-3 3xl:gap-4 bg-white px-2 xl:px-3 3xl:px-4 py-1 xl:py-1.5 3xl:py-2 rounded-md border border-gray-200">
+                <span class="text-[10px] xl:text-[11px] 3xl:text-[13px] text-gray-500 font-medium">تحديث تلقائي:</span>
                 <input 
                     type="number" 
                     v-model.number="autoRefreshInterval" 
                     min="5" 
-                    class="w-12 text-center text-xs border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:border-primary"
+                    class="w-10 xl:w-12 3xl:w-14 text-center text-[10px] xl:text-xs 3xl:text-sm border border-gray-300 rounded px-1 py-0.5 focus:outline-none focus:border-primary"
                 />
-                <span class="text-[10px] text-gray-500">ثانية</span>
+                <span class="text-[10px] xl:text-[11px] 3xl:text-[13px] text-gray-500">ثانية</span>
                 <button 
                     @click="toggleAutoRefresh" 
-                    class="px-3 py-1 text-xs rounded-md transition-all duration-200 flex items-center gap-1 font-medium"
+                    class="px-2 xl:px-3 3xl:px-4 py-0.5 xl:py-1 3xl:py-1.5 text-[10px] xl:text-xs 3xl:text-sm rounded-md transition-all duration-200 flex items-center gap-1 font-medium"
                     :class="isAutoRefreshActive ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-[#03AA77]/10 text-[#03AA77] hover:bg-[#03AA77]/20'"
                 >
-                    <span v-if="isAutoRefreshActive" class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                    <span v-if="isAutoRefreshActive" class="w-1.5 h-1.5 3xl:w-2 3xl:h-2 rounded-full bg-red-500 animate-pulse"></span>
                     {{ isAutoRefreshActive ? 'إيقاف' : 'تشغيل' }}
                 </button>
             </div>
-            <div class="w-px h-4 bg-gray-300"></div>
-            <div class="text-xs text-secondary font-bold">الإحصائيات</div>
+            <div class="hidden lg:block w-px h-3 lg:h-4 xl:h-5 3xl:h-6 bg-gray-300"></div>
+            <div class="text-[10px] lg:text-xs xl:text-sm 3xl:text-base text-secondary font-bold">الإحصائيات</div>
         </div>
         
-        <button @click="handleLogout" class="p-2 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
-          <img src="/logout-02.png" alt="Logout" class="h-5 w-5" />
+        <button @click="handleLogout" class="p-1.5 sm:p-2 lg:p-3 3xl:p-4 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
+          <img src="/logout-02.png" alt="Logout" class="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 xl:h-7 xl:w-7 3xl:h-8 3xl:w-8" />
         </button>
       </header>
 
       <!-- Main Content -->
-      <main class="flex-grow flex overflow-hidden" style="height: calc(100vh - 4rem);">
+      <main class="flex-grow flex overflow-hidden main-content">
         <!-- Right Sidebar-->
 
         <!-- Main Content Area -->
         <div class="flex-1 flex flex-col overflow-y-auto relative bg-[#FEFAF7]">
 
-        <div class="flex-1 flex flex-col items-center py-8">
+        <div class="flex-1 flex flex-col items-center py-4 sm:py-6 lg:py-8 3xl:py-10">
             <div v-if="isLoading" class="absolute inset-0 bg-[#FEFAF7]/80 z-30 flex items-center justify-center">
               <div class="flex flex-col items-center gap-4">
-                <div class="w-12 h-12 border-4 border-[#01564733] border-t-[#015647] rounded-full animate-spin"></div>
-                <span class="text-sm font-medium text-[#2B3032]">جاري تحميل البيانات...</span>
+                <div class="w-12 h-12 3xl:w-16 3xl:h-16 border-4 3xl:border-6 border-[#01564733] border-t-[#015647] rounded-full animate-spin"></div>
+                <span class="text-sm 3xl:text-base font-medium text-[#2B3032]">جاري تحميل البيانات...</span>
               </div>
             </div>
 
             <transition name="fade">
-              <div v-if="showErrorNotify" class="fixed top-20 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-6 py-3 rounded-full shadow-2xl flex items-center gap-3">
-                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                 <span class="text-sm font-bold">فشل الاتصال بالخادم. يتم عرض بيانات تجريبية.</span>
+              <div v-if="showErrorNotify" class="fixed top-16 sm:top-20 3xl:top-28 left-1/2 -translate-x-1/2 z-50 bg-red-600 text-white px-4 sm:px-6 3xl:px-8 py-2 sm:py-3 3xl:py-4 rounded-full shadow-2xl flex items-center gap-2 sm:gap-3 3xl:gap-4 text-xs sm:text-sm 3xl:text-base">
+                 <svg class="w-4 h-4 sm:w-5 sm:h-5 3xl:w-6 3xl:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                 <span class="font-bold">فشل الاتصال بالخادم. يتم عرض بيانات تجريبية.</span>
                  <button @click="showErrorNotify = false" class="hover:opacity-70">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    <svg class="w-3 h-3 sm:w-4 sm:h-4 3xl:w-5 3xl:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                  </button>
               </div>
             </transition>
 
-            <div v-if="!isLoading" class="w-[900px] flex flex-col gap-2 scale-95 origin-top">
-              <div class="flex justify-between items-center h-[28px]">
-                 <h2 class="text-sm font-semibold text-[#2B3032]">ملخص</h2>
-                 <button class="flex items-center gap-1 px-2 py-1 bg-[#23282D0D] rounded-lg text-xs text-[#2B3032]">
-                    <svg class="w-4 h-4 opacity-40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
-                    <span>الكل</span>
-                 </button>
+            <div v-if="!isLoading" class="w-full max-w-[95%] sm:max-w-[90%] md:max-w-[95%] lg:max-w-[1200px] xl:max-w-[1400px] 2xl:max-w-[1600px] 3xl:max-w-[2000px] flex flex-col gap-3 sm:gap-4 lg:gap-5 xl:gap-6 3xl:gap-8 px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8 3xl:px-10">
+              <!-- View Mode Toggle -->
+              <div class="flex justify-between items-center h-auto sm:h-[28px] 3xl:h-[32px]">
+                 <h2 class="text-xs sm:text-sm lg:text-base xl:text-lg 3xl:text-xl font-semibold text-[#2B3032]">ملخص</h2>
+                 <div class="flex gap-1.5 sm:gap-2 3xl:gap-3">
+                    <button 
+                       @click="viewMode = 'all'" 
+                       class="flex items-center gap-1 px-2 sm:px-3 3xl:px-4 py-1 3xl:py-1.5 rounded-lg text-[10px] sm:text-xs lg:text-sm 3xl:text-base transition-all"
+                       :class="viewMode === 'all' ? 'bg-[#015647] text-white' : 'bg-[#23282D0D] text-[#2B3032] hover:bg-[#23282D1A]'"
+                    >
+                       <span>الكل</span>
+                    </button>
+                    <button 
+                       @click="switchToStationView" 
+                       class="flex items-center gap-1 px-2 sm:px-3 3xl:px-4 py-1 3xl:py-1.5 rounded-lg text-[10px] sm:text-xs lg:text-sm 3xl:text-base transition-all"
+                       :class="viewMode === 'station' ? 'bg-[#015647] text-white' : 'bg-[#23282D0D] text-[#2B3032] hover:bg-[#23282D1A]'"
+                    >
+                       <span>مراكز التقريع</span>
+                    </button>
+                 </div>
               </div>
 
-              <div class="flex gap-7 h-[112px]">
-                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                  <span class="text-[12px] font-medium text-[#2B3032]">مكاتب لم تبدأ بعد</span>
-                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.officesNotStartedCount }}</div>
+              <!-- All View -->
+              <div v-if="viewMode === 'all'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 3xl:grid-cols-6 gap-3 sm:gap-4 lg:gap-5 xl:gap-6 2xl:gap-7 3xl:gap-8">
+                <div class="bg-white rounded-xl sm:rounded-2xl 3xl:rounded-3xl p-3 sm:p-4 lg:p-5 xl:p-6 2xl:p-7 3xl:p-9 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100 min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] xl:min-h-[140px] 2xl:min-h-[160px] 3xl:min-h-[200px]">
+                  <span class="text-[11px] sm:text-[12px] lg:text-[14px] xl:text-[16px] 2xl:text-[18px] 3xl:text-[20px] font-medium text-[#2B3032]">مكاتب لم تبدأ بعد</span>
+                  <div class="text-[20px] sm:text-[24px] lg:text-[28px] xl:text-[36px] 2xl:text-[44px] 3xl:text-[52px] font-semibold text-[#2B3032]">{{ indicators.officesNotStartedCount }}</div>
                 </div>
-                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                  <span class="text-[12px] font-medium text-[#2B3032]">مكاتب انتهت من القرعة</span>
-                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.officesFinishedCount }}</div>
+                <div class="bg-white rounded-xl sm:rounded-2xl 3xl:rounded-3xl p-3 sm:p-4 lg:p-5 xl:p-6 2xl:p-7 3xl:p-9 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100 min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] xl:min-h-[140px] 2xl:min-h-[160px] 3xl:min-h-[200px]">
+                  <span class="text-[11px] sm:text-[12px] lg:text-[14px] xl:text-[16px] 2xl:text-[18px] 3xl:text-[20px] font-medium text-[#2B3032]">مكاتب انتهت من القرعة</span>
+                  <div class="text-[20px] sm:text-[24px] lg:text-[28px] xl:text-[36px] 2xl:text-[44px] 3xl:text-[52px] font-semibold text-[#2B3032]">{{ indicators.officesFinishedCount }}</div>
                 </div>
-                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                  <span class="text-[12px] font-medium text-[#2B3032]">الفائزين بالقرعة</span>
-                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.totalWinnersCount }}</div>
+                <div class="bg-white rounded-xl sm:rounded-2xl 3xl:rounded-3xl p-3 sm:p-4 lg:p-5 xl:p-6 2xl:p-7 3xl:p-9 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100 min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] xl:min-h-[140px] 2xl:min-h-[160px] 3xl:min-h-[200px]">
+                  <span class="text-[11px] sm:text-[12px] lg:text-[14px] xl:text-[16px] 2xl:text-[18px] 3xl:text-[20px] font-medium text-[#2B3032]">الفائزين بالقرعة</span>
+                  <div class="flex items-end justify-between w-full gap-2 sm:gap-3 lg:gap-4 3xl:gap-5">
+                    <!-- Right side: Breakdown -->
+                    <div class="flex flex-col gap-0.5 sm:gap-1 3xl:gap-1.5 items-end">
+                      <div class="flex items-baseline gap-1 sm:gap-2 3xl:gap-3">
+                        <div class="text-[12px] sm:text-[14px] lg:text-[16px] xl:text-[20px] 2xl:text-[24px] 3xl:text-[28px] font-semibold text-[#2B3032]">{{ indicators.totalWinnersHajjaj || 0 }}</div>
+                        <span class="text-[9px] sm:text-[10px] lg:text-[11px] xl:text-[12px] 2xl:text-[13px] 3xl:text-[15px] text-gray-500">حجاج</span>
+                      </div>
+                      <div class="flex items-baseline gap-1 sm:gap-2 3xl:gap-3">
+                        <div class="text-[12px] sm:text-[14px] lg:text-[16px] xl:text-[20px] 2xl:text-[24px] 3xl:text-[28px] font-semibold text-[#015647]">{{ indicators.totalWinnersCompanions || 0 }}</div>
+                        <span class="text-[9px] sm:text-[10px] lg:text-[11px] xl:text-[12px] 2xl:text-[13px] 3xl:text-[15px] text-gray-500">مرافقين</span>
+                      </div>
+                    </div>
+                    <!-- Left side: Total -->
+                    <div class="text-[20px] sm:text-[24px] lg:text-[28px] xl:text-[36px] 2xl:text-[44px] 3xl:text-[52px] font-semibold text-[#2B3032]">{{ indicators.totalWinnersCount }}</div>
+                  </div>
                 </div>
-                <div class="flex-1 min-w-[200px] bg-white rounded-2xl p-6 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                  <span class="text-[12px] font-medium text-[#2B3032]">المسجلين في المنظومة</span>
-                  <div class="text-[24px] font-semibold text-[#2B3032]">{{ indicators.registeredUsersCount }}</div>
+                <div class="bg-white rounded-xl sm:rounded-2xl 3xl:rounded-3xl p-3 sm:p-4 lg:p-5 xl:p-6 2xl:p-7 3xl:p-9 flex flex-col justify-between items-end transition-all hover:shadow-md border border-transparent hover:border-gray-100 min-h-[80px] sm:min-h-[100px] lg:min-h-[120px] xl:min-h-[140px] 2xl:min-h-[160px] 3xl:min-h-[200px]">
+                  <span class="text-[11px] sm:text-[12px] lg:text-[14px] xl:text-[16px] 2xl:text-[18px] 3xl:text-[20px] font-medium text-[#2B3032]">المسجلين في المنظومة</span>
+                  <div class="text-[20px] sm:text-[24px] lg:text-[28px] xl:text-[36px] 2xl:text-[44px] 3xl:text-[52px] font-semibold text-[#2B3032]">{{ indicators.registeredUsersCount }}</div>
                 </div>
               </div>
 
-              <div class="flex gap-7 h-[280px]">
-                 <div class="w-[600px] min-w-[400px] bg-white rounded-2xl p-6 flex flex-col gap-4 flex-grow transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                    <div class="flex justify-between items-center h-[28px] shrink-0">
-                      <h3 class="text-sm font-semibold text-[#2B3032] flex-grow text-right">التوزيع حسب المكتب</h3>
+              <!-- Office Distribution Chart  -->
+              <div v-if="viewMode === 'all'" class="flex flex-col lg:flex-row gap-3 sm:gap-4 lg:gap-5 xl:gap-6">
+                 <div class="flex-1 bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5 xl:p-6 flex flex-col gap-2 sm:gap-3 lg:gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                    <div class="flex justify-between items-center shrink-0">
+                      <h3 class="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold text-[#2B3032] flex-grow text-right">التوزيع حسب المكتب</h3>
                     </div>
 
-                    <div class="flex flex-1 items-center justify-center px-5 gap-10 border-none">
-                      <div class="w-[140px] h-[140px] shrink-0">
-                         <apexchart type="donut" width="140" height="140" :options="paginatedChartOptions" :series="paginatedSeries"></apexchart>
+                    <div class="flex flex-col sm:flex-row flex-1 items-center justify-center gap-4 sm:gap-6 lg:gap-8 xl:gap-10">
+                      <div class="w-[120px] h-[120px] sm:w-[140px] sm:h-[140px] lg:w-[160px] lg:h-[160px] xl:w-[180px] xl:h-[180px] shrink-0">
+                         <apexchart type="donut" :width="chartSize" :height="chartSize" :options="paginatedChartOptions" :series="paginatedSeries"></apexchart>
                       </div>
 
-                      <div class="flex-1 flex flex-col max-w-[352px] self-stretch py-2">
-                        <div class="flex-1 flex flex-col gap-3">
+                      <div class="flex-1 flex flex-col w-full sm:max-w-[300px] lg:max-w-[350px] xl:max-w-[400px] self-stretch py-1 sm:py-2">
+                        <div class="flex-1 flex flex-col gap-1.5 sm:gap-2 lg:gap-3">
                           <div v-for="(item, idx) in paginatedLegend" :key="item.index" 
-                               class="flex items-center justify-between h-[22px]">
-                            <div class="flex items-center gap-2">
-                              <span class="text-[12px] text-[#2B3032]">{{ item.label }}</span>
-                              <span class="w-4 h-4 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: donutOptions.colors[idx] || '#eee' }"></span>
+                               class="flex items-center justify-between h-auto sm:h-[22px] lg:h-[26px] xl:h-[30px]">
+                            <div class="flex items-center gap-1.5 sm:gap-2">
+                              <span class="text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px] text-[#2B3032]">{{ item.label }}</span>
+                              <span class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5 rounded-full flex items-center justify-center shrink-0" :style="{ backgroundColor: donutOptions.colors[idx] || '#eee' }"></span>
                             </div>
-                            <span class="text-[12px] text-[#2B3032] font-['Inter'] min-w-[35px] text-left">{{ item.percentage }}%</span>
+                            <span class="text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px] text-[#2B3032] font-['Inter'] min-w-[30px] sm:min-w-[35px] lg:min-w-[40px] text-left">{{ item.percentage }}%</span>
                           </div>
                         </div>
                         
-                        <div v-if="totalPages > 1" class="flex items-center justify-center gap-4 pt-4 mt-auto border-t border-gray-50">
-                           <button @click="legendPage--" :disabled="legendPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <div v-if="totalPages > 1" class="flex items-center justify-center gap-3 sm:gap-4 pt-2 sm:pt-3 lg:pt-4 mt-auto border-t border-gray-50">
+                           <button @click="legendPage--" :disabled="legendPage <= 1" class="p-1.5 sm:p-2 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032] touch-manipulation">
+                              <svg class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                            </button>
-                           <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ legendPage }} / {{ totalPages }}</span>
-                           <button @click="legendPage++" :disabled="legendPage >= totalPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
-                              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                           <span class="text-[10px] sm:text-[11px] lg:text-[12px] text-gray-400 font-mono tracking-tighter">{{ legendPage }} / {{ totalPages }}</span>
+                           <button @click="legendPage++" :disabled="legendPage >= totalPages" class="p-1.5 sm:p-2 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032] touch-manipulation">
+                              <svg class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                            </button>
                         </div>
                       </div>
                     </div>
                  </div>
 
-                 <div class="w-[272px] bg-white rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                    <h3 class="text-sm font-semibold text-[#2B3032] text-right">إحصائيات</h3>
-                    <div class="flex flex-col gap-4 w-full">
-                      <div class="flex justify-between w-full text-[12px]">
+                 <div class="w-full lg:w-[240px] xl:w-[280px] 2xl:w-[320px] bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5 xl:p-6 flex flex-col gap-2 sm:gap-3 lg:gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100">
+                    <h3 class="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold text-[#2B3032] text-right">إحصائيات</h3>
+                    <div class="flex flex-col gap-2 sm:gap-3 lg:gap-4 w-full">
+                      <div class="flex justify-between w-full text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.totalPilgrims.toLocaleString() }}</span>
                         <span class="text-[#2B3032] opacity-60">عدد الحجاج</span>
                       </div>
-                      <div class="flex justify-between w-full text-[12px]">
+                      <div class="flex justify-between w-full text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.maleCount.toLocaleString() }}</span>
                         <span class="text-[#2B3032] opacity-60">ذكور</span>
                       </div>
-                      <div class="flex justify-between w-full text-[12px]">
+                      <div class="flex justify-between w-full text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.femaleCount.toLocaleString() }}</span>
                         <span class="text-[#2B3032] opacity-60">إناث</span>
                       </div>
-                      <div class="flex justify-between w-full text-[12px]">
+                      <div class="flex justify-between w-full text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.numberOfHajjajOver65YearsOfAge.toLocaleString() }}</span>
                         <span class="text-[#2B3032] opacity-60"> الأعمار اكبر من 60</span>
                       </div>
-                      <div class="flex justify-between w-full text-[12px]">
+                      <div class="flex justify-between w-full text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.totalCompletionRateForAllCenters }}</span>
                         <span class="text-[#2B3032] opacity-60">نسبة الانجاز</span>
                       </div>
-                      <div class="flex justify-between w-full text-[12px]">
+                      <div class="flex justify-between w-full text-[10px] sm:text-[11px] lg:text-[12px] xl:text-[13px]">
                         <span class="font-medium text-[#2B3032]">{{ indicators.totalWinnersCount.toLocaleString() }}</span>
                         <span class="text-[#2B3032] opacity-60">الفائزين</span>
                       </div>
@@ -166,23 +194,50 @@
                  </div>
               </div>
 
-              <div class="flex gap-7 h-[280px]">
-                <div class="flex-1 bg-white rounded-2xl p-6 flex flex-col gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100">
-                  <div class="flex justify-between items-center mb-2">
-                    <div v-if="totalBarPages > 1" class="flex items-center gap-4">
-                       <button @click="barPage--" :disabled="barPage <= 1" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+              <!-- Bar Chart -->
+              <div v-if="viewMode === 'all'" class="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 lg:p-5 xl:p-6 flex flex-col gap-2 sm:gap-3 lg:gap-4 transition-all hover:shadow-md border border-transparent hover:border-gray-100 min-h-[200px] sm:min-h-[240px] lg:min-h-[280px] xl:min-h-[320px]">
+                  <div class="flex justify-between items-center">
+                    <div v-if="totalBarPages > 1" class="flex items-center gap-2 sm:gap-3 lg:gap-4">
+                       <button @click="barPage--" :disabled="barPage <= 1" class="p-1.5 sm:p-2 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032] touch-manipulation">
+                          <svg class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
                        </button>
-                       <span class="text-[11px] text-gray-400 font-mono tracking-tighter">{{ barPage }} / {{ totalBarPages }}</span>
-                       <button @click="barPage++" :disabled="barPage >= totalBarPages" class="p-1 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032]">
-                          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
+                       <span class="text-[10px] sm:text-[11px] lg:text-[12px] text-gray-400 font-mono tracking-tighter">{{ barPage }} / {{ totalBarPages }}</span>
+                       <button @click="barPage++" :disabled="barPage >= totalBarPages" class="p-1.5 sm:p-2 hover:bg-gray-100 rounded-md disabled:opacity-20 transition-colors text-[#2B3032] touch-manipulation">
+                          <svg class="w-3 h-3 sm:w-4 sm:h-4 lg:w-5 lg:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                        </button>
                     </div>
-                    <h3 class="text-sm font-semibold text-[#2B3032] text-right">عدد الفائزين في كل مكتب</h3>
+                    <h3 class="text-xs sm:text-sm lg:text-base xl:text-lg font-semibold text-[#2B3032] text-right">عدد الفائزين في كل مكتب</h3>
                   </div>
                   <div class="flex-1 overflow-hidden">
                     <apexchart :key="barPage" type="bar" height="100%" width="100%" :options="paginatedBarOptions" :series="paginatedBarSeries"></apexchart>
                   </div>
+              </div>
+
+              <!-- Station View - 8 Cards with Donut Charts -->
+              <div v-if="viewMode === 'station'" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 2xl:grid-cols-4 3xl:grid-cols-5 gap-3 sm:gap-4 lg:gap-5 xl:gap-8 2xl:gap-8 3xl:gap-10">
+                <div 
+                  v-for="(percentage, station) in stationData" 
+                  :key="station"
+                  class="bg-white rounded-xl sm:rounded-2xl lg:rounded-3xl 3xl:rounded-[2rem] p-4 sm:p-5 md:p-6 lg:p-7 xl:p-8 2xl:p-10 3xl:p-12 flex flex-col gap-3 sm:gap-4 lg:gap-5 xl:gap-6 3xl:gap-7 items-center justify-start transition-all hover:shadow-lg border border-transparent hover:border-[#015647]/20 group h-full"
+                >
+                  <!-- Station Name (Top) -->
+                  <h3 class="text-base sm:text-lg md:text-xl lg:text-2xl 3xl:text-3xl text-[#2B3032] font-bold text-center leading-tight w-full">{{ station }}</h3>
+
+                  <!-- Donut Chart -->
+                  <div class="flex-grow flex items-center justify-start w-full px-4 3xl:px [40px] laptop-chart-padding">
+                      <div class="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] xl:w-[240px] xl:h-[240px] 2xl:w-[240px] 2xl:h-[240px] 3xl:w-[280px] 3xl:h-[280px] shrink-0">
+                        <apexchart 
+                          type="donut" 
+                          :width="stationChartSize" 
+                          :height="stationChartSize" 
+                          :options="getStationChartOptions(percentage)" 
+                          :series="[percentage, 100 - percentage]"
+                        ></apexchart>
+                      </div>
+                  </div>
+                  
+                  <!-- Percentage (Bottom) -->
+                  <!-- <p class="text-[18px] sm:text-[20px] md:text-[22px] lg:text-[24px] xl:text-[26px] 2xl:text-[28px] 3xl:text-[32px] font-bold" :class="percentage === 100 ? 'text-[#03AA77]' : 'text-[#015647]'">{{ percentage }}%</p> -->
                 </div>
               </div>
 
@@ -205,6 +260,8 @@ export default {
     },
     data() {
         return {
+            viewMode: 'all', // 'all' or 'station'
+            stationData: {},
             sidebarVisible: true,
             isLoading: true,
             error: null,
@@ -215,12 +272,13 @@ export default {
               officesNotStartedCount: 0,
               officesFinishedCount: 0,
               totalWinnersCount: 0,
+              totalWinnersHajjaj: 0,
+              totalWinnersCompanions: 0,
               registeredUsersCount: 0,
               maleCount: 0,
               femaleCount: 0,
               totalPilgrims: 0,
               numberOfHajjajOver65YearsOfAge: 0,
-              totalCompletionRateForAllCenters: 0,
               totalCompletionRateForAllCenters: 0
             },
             // Auto Refresh Data
@@ -334,6 +392,38 @@ export default {
         }
     },
     computed: {
+      chartSize() {
+        // Return responsive chart size based on screen width
+        if (typeof window !== 'undefined') {
+          if (window.innerWidth >= 1920) return 200; // 3xl (TV screens)
+          if (window.innerWidth >= 1536) return 180; // 2xl
+          if (window.innerWidth >= 1280) return 160; // xl
+          if (window.innerWidth >= 1024) return 160; // lg
+          if (window.innerWidth >= 768) return 140; // md
+          if (window.innerWidth >= 640) return 140; // sm
+        }
+        return 120; // mobile default
+      },
+      circleRadius() {
+        // Radius for the circular progress indicator
+        return 35;
+      },
+      circleCircumference() {
+        // Circumference = 2 * π * radius
+        return 2 * Math.PI * this.circleRadius;
+      },
+      stationChartSize() {
+        // Return responsive chart size for station cards
+        if (typeof window !== 'undefined') {
+          if (window.innerWidth >= 1920) return 280; // 3xl (TV screens)
+          if (window.innerWidth >= 1536) return 240; // 2xl
+          if (window.innerWidth >= 1280) return 220; // xl
+          if (window.innerWidth >= 1024) return 200; // lg
+          if (window.innerWidth >= 768) return 180; // md
+          if (window.innerWidth >= 640) return 160; // sm
+        }
+        return 140; // mobile default
+      },
       totalPages() {
         return Math.ceil((this.donutOptions.labels?.length || 0) / 5);
       },
@@ -410,6 +500,32 @@ export default {
         }
     },
     methods: {
+        async switchToStationView() {
+            this.viewMode = 'station';
+            if (Object.keys(this.stationData).length === 0) {
+                await this.fetchStationData();
+            }
+        },
+        async fetchStationData() {
+            try {
+                const response = await api.getIndicatorsStation();
+                const data = response.data?.object;
+                if (data) {
+                    this.stationData = data;
+                }
+            } catch (err) {
+                console.error("Error fetching station data:", err);
+                // Set dummy data for demonstration
+                this.stationData = {
+                    'محطة 1': 150,
+                    'محطة 2': 230,
+                    'محطة 3': 180,
+                    'محطة 4': 210,
+                    'محطة 5': 195,
+                    'محطة 6': 165
+                };
+            }
+        },
         toggleSidebar() {
           this.sidebarVisible = !this.sidebarVisible;
         },
@@ -435,6 +551,70 @@ export default {
                 this.fetchIndicators(true); // true for silent refresh
             }, this.autoRefreshInterval * 1000);
         },
+        getStationChartOptions(percentage) {
+            const isComplete = percentage === 100;
+            const progressColor = isComplete ? '#03AA77' : '#015647';
+            const backgroundColor = '#E5E7EB';
+            
+            return {
+                chart: {
+                    type: 'donut',
+                    sparkline: {
+                        enabled: true
+                    }
+                },
+                labels: ['مكتمل', 'متبقي'],
+                colors: [progressColor, backgroundColor],
+                stroke: {
+                    show: false
+                },
+                plotOptions: {
+                    pie: {
+                        donut: {
+                            size: '65%',
+                            labels: {
+                                show: true,
+                                name: {
+                                    show: false
+                                },
+                                value: {
+                                    show: true,
+                                    fontSize: '28px',
+                                    fontWeight: 'bold',
+                                    color: progressColor,
+                                    offsetY: 10,
+                                    offsetX: 30,
+                                    formatter: function(val) {
+                                        return percentage + '%';
+                                    }
+                                },
+                                total: {
+                                    show: true,
+                                    showAlways: true,
+                                    fontSize: '28px',
+                                    fontWeight: 'bold',
+                                    color: progressColor,
+                                    offsetY: 10,
+                                    offsetX: -30, 
+                                    formatter: function() {
+                                        return percentage + '%';
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                dataLabels: {
+                    enabled: false
+                },
+                legend: {
+                    show: false
+                },
+                tooltip: {
+                    enabled: false
+                }
+            };
+        },
         stopAutoRefresh() {
             this.isAutoRefreshActive = false;
             if (this.refreshTimer) {
@@ -456,6 +636,8 @@ export default {
           }
           
           try {
+            const stationResponse = await api.getIndicatorsStation();
+            const stationData = stationResponse.data?.object;
             const response = await api.getIndicators();
             const data = response.data?.object;
             
@@ -465,6 +647,8 @@ export default {
                 officesNotStartedCount: data.numberOfOfficeshaveNotYetStarted || 0,
                 officesFinishedCount: data.numberOfOfficesCompleted || 0,
                 totalWinnersCount: data.numberOfWinners || 0,
+                totalWinnersHajjaj: data.numberOfHajjWinners || 0,
+                totalWinnersCompanions: data.numberOfCompanionWinners || 0,
                 registeredUsersCount: data.numberOfRegistered || 0,
                 totalPilgrims: data.numberOfHajjaj || 0,
                 maleCount: data.numberOfMen || 0,
@@ -472,7 +656,10 @@ export default {
                 numberOfHajjajOver65YearsOfAge: data.numberOfHajjajOver65YearsOfAge || 0,
                 totalCompletionRateForAllCenters: data.totalCompletionRateForAllCenters || 0
               };
-
+              
+              if (stationData) {
+                this.stationData = stationData;
+              }
               // Map Donut Chart (distributionByCenter)
               if (data.distributionByCenter && Object.keys(data.distributionByCenter).length > 0) {
                 const sortedEntries = Object.entries(data.distributionByCenter)
@@ -533,6 +720,8 @@ export default {
             officesNotStartedCount: 9,
             officesFinishedCount: 3,
             totalWinnersCount: 764,
+            totalWinnersHajjaj: 600,
+            totalWinnersCompanions: 164,
             registeredUsersCount: 64152,
             maleCount: 1800,
             femaleCount: 1200,
@@ -592,3 +781,30 @@ export default {
     }
 }
 </script>
+
+<style scoped>
+.main-content {
+  height: calc(100vh - 4rem);
+}
+
+@media (min-width: 1024px) {
+  .main-content {
+    height: calc(100vh - 5rem);
+  }
+}
+
+@media (min-width: 1280px) {
+  .main-content {
+    height: calc(100vh - 6rem);
+  }
+}
+
+/* Custom padding for laptop screens (15 inch, typically 1280px - 1919px range) */
+/* YOU CAN CHANGE THE PIXEL VALUE BELOW UNTIL IT IS OK */
+@media (min-width: 1280px) and (max-width: 1919px) {
+  .laptop-chart-padding {
+    padding-inline: 60px; /* Adjust this value to fix the layout on 15" laptop */
+  }
+}
+</style>
+

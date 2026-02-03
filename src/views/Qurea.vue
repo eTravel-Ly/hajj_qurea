@@ -1,7 +1,7 @@
 <template>
     <div class="min-h-screen flex flex-col bg-[#FEFAF7] font-sans" dir="rtl">
       <!-- Top Navigation -->
-      <header class="bg-white shadow-sm z-20 flex-shrink-0 h-16 flex justify-between items-center px-6">
+      <header class="bg-white shadow-sm z-20 flex-shrink-0 h-16 flex justify-between items-center px-6 relative">
         <div class="flex items-center gap-3">
           <!-- Sidebar Toggle Button -->
           <button 
@@ -22,8 +22,57 @@
           </div>
         </div>
         
+        <!-- Floating Progress Stripe (Bottom of Navbar) -->
+        <!-- <div class="absolute bottom-0 left-0 w-full group z-30">
+            <div class="w-full h-1 bg-gray-100 relative">
+                <div 
+                    class="h-full transition-all duration-1000 ease-out relative"
+                    :class="overallProgress === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
+                    :style="{ width: overallProgress + '%' }"
+                >
+                    <div class="absolute inset-0 bg-white/20 animate-[shimmer_2s_infinite]"></div>
+                </div>
+            </div>
+
+            <div class="absolute top-full left-1/2 -translate-x-1/2 flex items-center gap-2 bg-white/80 backdrop-blur-sm px-2 py-0.5 rounded-b-lg border-b border-x border-gray-100 shadow-sm opacity-60 group-hover:opacity-100 transition-opacity z-30">
+                 <span class="text-[10px] font-bold text-gray-500">نسبة اكتمال القرعة</span>
+                 <span class="text-[10px] font-bold font-mono" :class="overallProgress === 100 ? 'text-green-600' : 'text-[#D8A663]'">
+                    {{ overallProgress }}%
+                </span>
+            </div>
+
+            <div class="absolute top-full left-1/2 -translate-x-1/2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 p-4 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 transform group-hover:translate-y-2 -translate-y-2 z-40 mt-1">
+                <div class="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white border-l border-t border-gray-100 transform rotate-45"></div>
+                
+                <div class="flex justify-between items-center mb-3 border-b border-gray-50 pb-2">
+                    <h4 class="text-xs font-bold text-gray-400">تفاصيل التنسيقيات</h4>
+                    <span class="text-xs font-bold font-mono" :class="overallProgress === 100 ? 'text-green-600' : 'text-[#D8A663]'">
+                        {{ overallProgress }}%
+                    </span>
+                </div>
+                
+                <div class="space-y-3 max-h-[300px] overflow-y-auto scrollbar-hide">
+                    <div v-for="stat in coordinationStats" :key="stat.id" class="flex flex-col gap-1">
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="font-bold text-gray-700 truncate max-w-[140px]" :title="stat.name">{{ stat.name }}</span>
+                            <span class="font-mono font-bold" :class="stat.percentage === 100 ? 'text-green-600' : 'text-gray-500'">
+                                {{ stat.percentage }}%
+                            </span>
+                        </div>
+                        <div class="w-full h-1.5 bg-gray-50 rounded-full overflow-hidden">
+                            <div 
+                                class="h-full rounded-full transition-all duration-500"
+                                :class="stat.percentage === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
+                                :style="{ width: stat.percentage + '%' }"
+                            ></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
         <!-- Global Stats Ticker -->
-        <div class="hidden md:flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
+        <div class="hidden lg:flex items-center gap-6 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">
             <div class="flex items-center gap-2">
                <span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
                <span class="text-xs text-gray-400">إجمالي الحجاج</span>
@@ -80,8 +129,10 @@
                   class="bg-white rounded-lg border-2 p-3 transition-all h-[110px] flex flex-col"
                   :class="[
                     String(office.id) === String(route.params.officeId) ? 'border-[#D8A663] ring-2 ring-[#D8A663]/20' : 'border-gray-200',
-                    isButtonDisabled ? 'opacity-40 pointer-events-none cursor-not-allowed grayscale' : ''
+                    isButtonDisabled || (!isCurrentCoordinationComplete && String(office.id) !== String(route.params.officeId)) ? 'opacity-40 grayscale' : 'cursor-pointer hover:shadow-md hover:border-[#D8A663]/50',
+                    isButtonDisabled ? 'pointer-events-none' : ''
                   ]"
+                  @click="selectOffice(office.id)"
                 >
                   <h4 class="font-bold text-base text-gray-800 mb-2">{{ office.name }}</h4>
                   
@@ -105,7 +156,8 @@
                     >
                       <span v-if="printingOfficeId == office.id" class="inline-block animate-spin w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full"></span>
                       <svg v-else xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 00-2 2h2m2 4h10a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6" />
                       </svg>
                     </button>
                   </div>
@@ -159,14 +211,71 @@
           </div>
 
           <!-- Title -->
-          <div class="text-center mb-3 mt-[15px]">
-            <h1 class="text-xl font-bold text-gray-800">قرعة الحج لموسم 1447 هجري - 2026 ميلادي</h1>
+          <div class="relative flex items-center justify-center mb-3 mt-[15px] px-6">
+            <h1 class="text-xl 2xl:text-4xl font-bold text-gray-800">قرعة الحج لموسم 1447 هجري - 2026 ميلادي</h1>
+            
+            <!-- Stats Dropdown - Right of Title -->
+             <div class="absolute right-6 2xl:right-12 top-1/2 -translate-y-1/2 z-[100]" v-click-outside="() => showStatsDropdown = false">
+                <button 
+                    @click.stop="showStatsDropdown = !showStatsDropdown"
+                    class="flex items-center gap-2 bg-white px-3 py-1.5 2xl:px-5 2xl:py-3 rounded-lg border border-[#D8A663] shadow-sm hover:bg-gray-50 transition-colors"
+                >
+                    <div class="flex flex-col items-end gap-1">
+                        <span class="text-[10px] 2xl:text-sm text-gray-500 font-bold">نسبة اكتمال القرعة</span>
+                        <span class="text-xs 2xl:text-lg font-bold font-mono" :class="overallProgress === 100 ? 'text-green-600' : 'text-[#D8A663]'">
+                           {{ overallProgress }}%
+                       </span>
+                       <!-- Mini Progress Bar -->
+                       <div class="w-20 2xl:w-48 h-1 2xl:h-2 bg-gray-100 rounded-full overflow-hidden">
+                           <div 
+                               class="h-full rounded-full transition-all duration-500"
+                               :class="overallProgress === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
+                               :style="{ width: overallProgress + '%' }"
+                           ></div>
+                       </div>
+                    </div>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 2xl:h-6 2xl:w-6 text-gray-400 transition-transform duration-200" :class="{'rotate-180': showStatsDropdown}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+
+                <!-- Dropdown -->
+                <div 
+                    v-if="showStatsDropdown"
+                    class="absolute top-full right-0 mt-2 w-72 2xl:w-96 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-[100] animate-fade-in origin-top-right"
+                >
+                    <!-- Arrow -->
+                    <div class="absolute -top-1.5 right-6 w-3 h-3 bg-white border-l border-t border-gray-100 transform rotate-45"></div>
+
+                    <div class="flex justify-between items-center mb-3 border-b border-gray-50 pb-2">
+                        <h4 class="text-xs 2xl:text-base font-bold text-gray-400">تفاصيل التنسيقيات</h4>
+                    </div>
+                    
+                    <div class="space-y-3 max-h-[300px] 2xl:max-h-[500px] overflow-y-auto scrollbar-hide">
+                        <div v-for="stat in coordinationStats" :key="stat.id" class="flex flex-col gap-1">
+                            <div class="flex justify-between items-center text-xs 2xl:text-base">
+                                <span class="font-bold text-gray-700 truncate max-w-[140px] 2xl:max-w-[200px]" :title="stat.name">{{ stat.name }}</span>
+                                <span class="font-mono font-bold" :class="stat.percentage === 100 ? 'text-green-600' : 'text-gray-500'">
+                                    {{ stat.percentage }}%
+                                </span>
+                            </div>
+                            <div class="w-full h-1.5 2xl:h-2.5 bg-gray-50 rounded-full overflow-hidden">
+                                <div 
+                                    class="h-full rounded-full transition-all duration-500"
+                                    :class="stat.percentage === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
+                                    :style="{ width: stat.percentage + '%' }"
+                                ></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
           </div>
 
           <!-- Side-by-Side Layout: Names Card and Number Card -->
-          <div class="flex-grow flex flex-col md:flex-row items-center justify-center gap-8 mb-3 px-6">
+          <div class="flex-grow flex flex-col md:flex-row items-center justify-center gap-8 lg:gap-12 mb-3 px-6">
             <!-- Winners List -->
-            <div class="w-[420px] md:w-[750px] h-[400px]">
+            <div class="winners-list-wrapper w-[420px] md:w-[750px] h-[400px]">
               <div class="bg-white rounded-xl p-6 h-full flex flex-col relative">
                 <!-- Corner Ornaments -->
                 <span class="corner-ornament corner-tl"></span>
@@ -211,22 +320,14 @@
                     لا يوجد فائزين بعد
                   </div>
                 </div>
-                
-                <!-- Total Count Footer -->
-                <!-- <div v-if="winnersQueue.length > 0" class="border-t border-gray-200 pt-3 mt-3 flex-shrink-0 relative z-10">
-                  <div class="flex justify-start items-center text-right gap-72 mr-4"> -->
-                    <!-- <span class="text-sm font-bold text-gray-800">الفائزين:</span>
-                    <span class="text-lg font-bold text-[#005045]">{{ currentWinnerIndex + 1 }} من {{ winnersQueue.length }}</span> -->
-                  <!-- </div> -->
-                <!-- </div> -->
               </div>
             </div>
 
             <!-- Lottery Number Card -->
             <div class="flex items-center justify-center">
-              <div class="bg-[#DCB278] rounded-[20px] p-[8px] shadow-2xl border-[8px] border-white">
-                <div class="bg-gradient-to-br rounded-[12px] w-[200px] md:w-[318px] h-[110px] md:h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
-                  <p class="text-[35px] md:text-[70px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
+              <div class="winner-number-outer bg-[#DCB278] rounded-[20px] p-[8px] shadow-2xl border-[8px] border-white">
+                <div class="winner-number-inner bg-gradient-to-br rounded-[12px] w-[200px] md:w-[318px] h-[110px] md:h-[174px] text-center transform hover:scale-105 transition-transform duration-300 flex items-center justify-center">
+                  <p class="winner-number-text text-[30px] md:text-[60px] font-bold text-white tracking-wider" style="font-family: Arial, Helvetica, sans-serif;">{{ lotteryNumber || '----' }}</p>
                 </div>
               </div>
             </div>
@@ -297,22 +398,13 @@
 
           <!-- Bottom Action Bar -->
           <div class="sticky bottom-0 flex justify-between items-center bg-[#005045] rounded-xl p-3 shadow-lg z-30 mt-auto">
-            <!-- Center Selector  -->
-            <div class="relative">
-              <select 
-                v-model="selectedCenterId" 
-                @change="handleCenterChange"
-                class="px-6 py-3 pr-10 bg-white border-2 border-gray-200 rounded-lg font-bold text-gray-700 focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none appearance-none cursor-pointer"
-              >
-                <option v-for="center in centers" :key="center.id" :value="center.id">
-                  {{ center.name }}
-                </option>
-              </select>
-              <div class="absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </div>
+            <!-- Center Display (Static) -->
+            <div 
+              v-if="selectedCenter"
+              class="px-8 py-3 bg-white border-2 border-gray-200 rounded-lg font-bold text-gray-700 shadow-sm"
+              style="font-family: 'Somar Sans', sans-serif;"
+            >
+              {{ selectedCenter.name }}
             </div>
 
             <!-- Middle Image -->
@@ -345,6 +437,19 @@
                 <span>التالي</span>
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" style="transform: scaleX(-1);">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <!-- New Button: Switch Coordination when all offices are done -->
+              <button
+                v-if="isCurrentCoordinationComplete"
+                @click="showOfficeSelector = true"
+                class="bg-white text-[#D8A764] border-2 border-[#005045] px-6 py-2 rounded-lg font-bold shadow-md hover:shadow-lg hover:bg-white/90 flex items-center gap-2 transition-all"
+                style="font-family: 'Somar Sans', sans-serif;"
+              >
+                <span>اختيار تنسيقية</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </button>
 
@@ -452,6 +557,7 @@ const POLLING_KEY_PREFIX = 'qurea_polling_office_';
 const printingOfficeId = ref(null);
 const showOfficeSelector = ref(false);
 const isLoadingWinners = ref(false); // Prevent duplicate API calls
+const showStatsDropdown = ref(false);
 
 const alertModal = ref({
     isVisible: false,
@@ -740,6 +846,9 @@ const handleExportAllCoordinationPDFs = async (coordinationId) => {
     const coordination = centers.value.find(c => c.id === coordinationId);
     let exportedCount = 0;
 
+    // List to hold all winner results for combined PDF
+    const allResults = [];
+
     // Process each office
     for (const office of coordinationOffices) {
       try {
@@ -747,22 +856,22 @@ const handleExportAllCoordinationPDFs = async (coordinationId) => {
         const res = await api.getOfficeWinners(office.id);
         const winners = res.data?.object || [];
         
-        // Only generate PDF if we actually have winners
+        // Only collect if we actually have winners
         if (Array.isArray(winners) && winners.length > 0) {
-          await pdfService.generateLotteryResultsPDF(
-             office,
-             winners,
-             coordination // Use original center object if available
-          );
+          allResults.push({
+            office: office,
+            winners: winners
+          });
           exportedCount++;
-          
-          // Add a small delay between downloads to prevent browser blocking
-          await new Promise(resolve => setTimeout(resolve, 800));
         }
       } catch (e) {
-        console.error(`Error exporting office ${office.name}:`, e);
-        // Continue to next office even if one fails
+        console.error(`Error fetching office ${office.name}:`, e);
       }
+    }
+    
+    // Generate combined PDF if any results found
+    if (allResults.length > 0) {
+      await pdfService.generateCombinedLotteryResultsPDF(coordination, allResults);
     }
     
     if (exportedCount === 0) {
@@ -848,12 +957,23 @@ const lotteryButtonText = computed(() => {
   if (isPolling.value) {
     return 'جاري بدء القرعة...';
   }
+  
+  // Check if current office is finished (from multiple sources for reliability)
+  const officeId = route.params.officeId;
+  const officeInList = offices.value.find(o => String(o.id) === String(officeId));
+  const isFinished = (officeInList && (officeInList.status === 3 || officeInList.status === '3')) || 
+                     (currentOffice.value && (currentOffice.value.status === 3 || currentOffice.value.status === '3')) ||
+                     (winnersQueue.value.length > 0 && currentWinnerIndex.value >= winnersQueue.value.length - 1);
+  
+  // If the office is already finished or the coordination is all done, show "عرض القرعه"
+  if (isFinished || isCurrentCoordinationComplete.value) {
+    return 'عرض القرعه';
+  }
+
   if (winnersQueue.value.length === 0) {
     return 'بدأ القرعة';
-  } else if (currentWinnerIndex.value >= 0 && currentWinnerIndex.value < winnersQueue.value.length - 1) {
+  } else if (isDrawing.value || (currentWinnerIndex.value >= 0 && currentWinnerIndex.value < winnersQueue.value.length - 1)) {
     return 'جاري السحب...';
-  } else if (currentWinnerIndex.value >= winnersQueue.value.length - 1) {
-    return `تم عرض جميع الفائزين`;
   } else {
     return 'بدأ عرض النتائج';
   }
@@ -887,6 +1007,47 @@ const getStatusTextColor = (status) => {
     default: return 'text-gray-500';
   }
 };
+
+// Overall Progress Statistics
+const overallProgress = computed(() => {
+  if (!offices.value.length) return 0;
+  const completed = offices.value.filter(o => o.status === 3).length;
+  // If we have 0 offices, percentage is 0. If all complete, 100.
+  return Math.round((completed / offices.value.length) * 100);
+});
+
+// Per-Coordination Statistics
+const coordinationStats = computed(() => {
+  if (!centers.value || !centers.value.length) return [];
+  
+  return centers.value.map(center => {
+    // Get offices for this center
+    const centerOffices = offices.value.filter(o => o.coordinationId === center.id);
+    const total = centerOffices.length;
+    
+    // If no offices, consider it 0% (or 100%? usually 0 if nothing to do)
+    if (total === 0) {
+      return {
+        id: center.id,
+        name: center.name,
+        percentage: 0,
+        total: 0,
+        completed: 0
+      };
+    }
+    
+    const completed = centerOffices.filter(o => o.status === 3).length;
+    const percentage = Math.round((completed / total) * 100);
+    
+    return {
+      id: center.id,
+      name: center.name,
+      percentage,
+      total,
+      completed
+    };
+  }).sort((a, b) => b.percentage - a.percentage); // Sort by highest percentage first
+});
 
 // Select next office
 const selectNextOffice = () => {
@@ -922,9 +1083,24 @@ const selectPreviousOffice = () => {
   router.push(`/qurea/${prevOffice.id}`);
 };
 
+const isCurrentCoordinationComplete = computed(() => {
+  if (!selectedCenterId.value || offices.value.length === 0) return false;
+  const coordinationOffices = offices.value.filter(o => o.coordinationId === selectedCenterId.value);
+  if (coordinationOffices.length === 0) return false;
+  return coordinationOffices.every(o => o.status === 3 || o.status === '3');
+});
+
 // Select office by ID
 const selectOffice = (officeId) => {
   if (isButtonDisabled.value) return;
+  
+  // Check if current coordination is complete
+  if (!isCurrentCoordinationComplete.value) {
+      // Allow clicking ONLY if it's the current office (no-op)
+      if (currentOffice.value && String(currentOffice.value.id) === String(officeId)) return;
+      return; 
+  }
+
   router.push(`/qurea/${officeId}`);
 };
 
@@ -982,7 +1158,7 @@ const handleCenterChange = () => {
 
 // Fetch register numbers for animation
 const fetchRegisterPage = async (pageNumber) => {
-  if (!currentOffice.value || isLoadingRegisters.value) return;
+  if (!currentOffice.value || isLoadingRegisters.value) return false;
   
   try {
     isLoadingRegisters.value = true;
@@ -1006,8 +1182,16 @@ const fetchRegisterPage = async (pageNumber) => {
 
 // Start lottery - Auto loop through all winners
 const handleStartLottery = async () => {
-  if (!currentOffice.value || isDrawing.value) return;
-    if (isButtonDisabled.value) return;
+    // CRITICAL: Robust guard at entry point
+    if (!currentOffice.value || isDrawing.value || isAnimating.value || isPolling.value || isButtonDisabled.value) {
+        console.warn('[Guard] Blocked handleStartLottery:', { 
+            isDrawing: isDrawing.value, 
+            isAnimating: isAnimating.value, 
+            isPolling: isPolling.value, 
+            isButtonDisabled: isButtonDisabled.value 
+        });
+        return;
+    }
 
   // Check if we need to load winners from API
   if (winnersQueue.value.length === 0) {
@@ -1051,7 +1235,7 @@ const handleStartLottery = async () => {
       currentOffice.value.status = 2;
       currentOffice.value.selectedCount = 0;
       saveState(); // Save initial state
-        if (isButtonDisabled.value) return;
+        if (isButtonDisabled.value || isAnimating.value) return;
 
       // Cache register names for animation
       cachedRegisterNames.value = winners;
@@ -1060,7 +1244,7 @@ const handleStartLottery = async () => {
       registerNumbers.value = [];
       currentRegisterIndex.value = 0;
       currentRegisterPage.value = 1;
-        if (isButtonDisabled.value) return;
+        if (isButtonDisabled.value || isAnimating.value) return;
 
       // Start the auto-loop
       showNextWinnerInLoop();
@@ -1075,8 +1259,10 @@ const handleStartLottery = async () => {
     // If at the end, do nothing (button should be disabled anyway)
     return;
   } else {
-    // Continue from where we left off
-    showNextWinnerInLoop();
+    // Double check before starting loop from button click
+    if (!isAnimating.value && !isDrawing.value) {
+        showNextWinnerInLoop();
+    }
   }
 };
 
@@ -1101,7 +1287,7 @@ const startPollingWinners = async () => {
           clearInterval(pollingInterval);
           pollingInterval = null;
         }
-        // isPolling.value = false; // DON'T set false yet!
+        isPolling.value = false; // Set to false immediately to prevent interval starting on line 1184
         
         // Clear polling flag from localStorage when completed
         localStorage.removeItem(POLLING_KEY_PREFIX + pollingOfficeId);
@@ -1127,23 +1313,19 @@ const startPollingWinners = async () => {
           
           // DOUBLE-CHECK: Ensure we're still on the same office before starting animation
           // This prevents race condition when switching offices at the exact moment polling completes
-          setTimeout(() => {
-            // NOW we can release the polling flag, as showNextWinnerInLoop will set isAnimating/isDrawing
-            isPolling.value = false;
-            
-            if (currentOffice.value.id === pollingOfficeId) {
-              showNextWinnerInLoop();
-            } else {
-              // Office changed, save state for the completed office
-              const stateToSave = {
-                winners: winners,
-                currentIndex: -1,
-                officeStatus: 2,
-                selectedCount: 0
-              };
-              localStorage.setItem(STORAGE_KEY_PREFIX + pollingOfficeId, JSON.stringify(stateToSave));
-            }
-          }, 100);
+          // CRITICAL: Call immediately without setTimeout to acquire isAnimating lock synchronously
+          if (currentOffice.value.id === pollingOfficeId) {
+            showNextWinnerInLoop();
+          } else {
+            // Office changed, save state for the completed office
+            const stateToSave = {
+              winners: winners,
+              currentIndex: -1,
+              officeStatus: 2,
+              selectedCount: 0
+            };
+            localStorage.setItem(STORAGE_KEY_PREFIX + pollingOfficeId, JSON.stringify(stateToSave));
+          }
         } else if (currentOffice.value.id !== pollingOfficeId) {
           isPolling.value = false; // Reset now since we're not starting animation here
           
@@ -1177,15 +1359,17 @@ const startPollingWinners = async () => {
 
 // Show next winner in automatic loop
 const showNextWinnerInLoop = async () => {
-  // CRITICAL: Prevent multiple simultaneous animation loops
+  // CRITICAL: SYNC LOCK IMMEDIATELY to prevent race conditions during async bits below
   if (isAnimating.value) {
     console.warn('[Animation Guard] Animation already in progress, skipping duplicate call');
     return;
   }
+  isAnimating.value = true;
   
   // Additional guard: Don't start if already drawing
   if (isDrawing.value) {
     console.warn('[Animation Guard] Already drawing, skipping duplicate call');
+    isAnimating.value = false; // Release lock if blocked
     return;
   }
   
@@ -1196,7 +1380,6 @@ const showNextWinnerInLoop = async () => {
   }
   
   console.log(`[Animation] Starting animation for winner ${currentWinnerIndex.value + 1}/${winnersQueue.value.length}`);
-  isAnimating.value = true;
   
   // DON'T increment here - wait until animation completes
   
@@ -1522,6 +1705,21 @@ watch(() => route.params.officeId, async (newOfficeId) => {
   }
 });
 
+// Click outside directive
+const vClickOutside = {
+  mounted(el, binding) {
+    el.clickOutsideEvent = function(event) {
+      if (!(el === event.target || el.contains(event.target))) {
+        binding.value(event);
+      }
+    };
+    document.body.addEventListener('click', el.clickOutsideEvent);
+  },
+  unmounted(el) {
+    document.body.removeEventListener('click', el.clickOutsideEvent);
+  },
+};
+
 // Watch for new winners and auto-scroll to bottom
 watch(currentWinnerIndex, async () => {
   if (winnersListContainer.value && currentWinnerIndex.value >= 0) {
@@ -1555,11 +1753,14 @@ watch([currentWinnerIndex, winnersQueue, currentOffice], () => {
     const allOfficesComplete = coordinationOffices.every(o => o.status === 3);
     
     // Only show selector if all offices in coordination are complete
+    // COMMENTED OUT as per user request to not show it "every time"
+    /*
     if (allOfficesComplete) {
       setTimeout(() => {
         showOfficeSelector.value = true;
       }, 3000);
     }
+    */
   }
 }, { deep: true });
 
@@ -1575,13 +1776,10 @@ const showNextButton = computed(() => {
     !isDrawing.value &&
     !isPolling.value
   ) {
-    // Check if there's a next office in this coordination
-    const coordinationOffices = offices.value
-      .filter(o => o.coordinationId === selectedCenterId.value)
-      .sort((a, b) => a.name.localeCompare(b.name, 'ar')); // Sort alphabetically
-    
-    const currentIndex = coordinationOffices.findIndex(o => String(o.id) === String(currentOffice.value.id));
-    return currentIndex >= 0 && currentIndex < coordinationOffices.length - 1;
+    // Hide next button if all offices in current coordination are complete
+    if (isCurrentCoordinationComplete.value) return false;
+    // Otherwise show it to move to next office
+    return true;
   }
   
   return false;
@@ -1599,28 +1797,43 @@ const handleNextOffice = () => {
   const currentIndex = coordinationOffices.findIndex(o => String(o.id) === String(currentOffice.value.id));
   
   if (currentIndex >= 0 && currentIndex < coordinationOffices.length - 1) {
-    const nextOffice = coordinationOffices[currentIndex + 1];
+    // Default to the immediate next office
+    let nextIndex = currentIndex + 1;
+    let foundNext = false;
     
-    // Navigate to next office
-    router.push(`/qurea/${nextOffice.id}`);
-    
-    // Auto-scroll sidebar to show the next office after a short delay
-    nextTick(() => {
-      setTimeout(() => {
-        if (sidebarOfficesContainer.value) {
-          // Find the office card element by data-office-id attribute
-          const officeCard = sidebarOfficesContainer.value.querySelector(`[data-office-id="${nextOffice.id}"]`);
-          
-          if (officeCard) {
-            // Scroll the office card into view with smooth behavior
-            officeCard.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center'
-            });
-          }
+    // Search forward for the nearest office that is NOT completed (status != 3)
+    for (let i = currentIndex + 1; i < coordinationOffices.length; i++) {
+        if (coordinationOffices[i].status !== 3) {
+            nextIndex = i;
+            foundNext = true;
+            break;
         }
-      }, 100); // Small delay to ensure DOM is updated
-    });
+    }
+    
+    if (foundNext) {
+        const nextOffice = coordinationOffices[nextIndex];
+        
+        // Navigate to next office
+        router.push(`/qurea/${nextOffice.id}`);
+        
+        // Auto-scroll sidebar to show the next office after a short delay
+        nextTick(() => {
+          setTimeout(() => {
+            if (sidebarOfficesContainer.value) {
+              const officeCard = sidebarOfficesContainer.value.querySelector(`[data-office-id="${nextOffice.id}"]`);
+              if (officeCard) {
+                officeCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              }
+            }
+          }, 100); 
+        });
+    } else {
+        // No incomplete next office found -> All subsequent are complete.
+        showOfficeSelector.value = true;
+    }
+  } else {
+      // Last item in array
+       showOfficeSelector.value = true;
   }
 };
 
@@ -1705,6 +1918,55 @@ onUnmounted(() => {
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Large Screen Enhancements (32" and 43" displays) */
+@media (min-width: 1600px) {
+    .winners-list-wrapper {
+        width: 1000px !important;
+        height: 550px !important;
+    }
+    .winner-number-inner {
+        width: 450px !important;
+        height: 250px !important;
+    }
+    .winner-number-text {
+        font-size: 90px !important;
+    }
+    .corner-ornament {
+        width: 120px !important;
+        height: 120px !important;
+    }
+    .corner-ornament::before {
+        width: 120px !important;
+        height: 120px !important;
+    }
+}
+
+@media (min-width: 2000px) {
+    .winners-list-wrapper {
+        width: 1300px !important;
+        height: 700px !important;
+    }
+    .winner-number-inner {
+        width: 600px !important;
+        height: 350px !important;
+    }
+    .winner-number-text {
+        font-size: 130px !important;
+    }
+    .corner-ornament {
+        width: 150px !important;
+        height: 150px !important;
+    }
+    .corner-ornament::before {
+        width: 150px !important;
+        height: 150px !important;
+    }
+    
+    /* Font scaling for list items */
+    .winners-list-wrapper .text-base { font-size: 1.5rem !important; } /* Label text */
+    .winners-list-wrapper .text-lg { font-size: 2rem !important; }   /* Value text */
 }
 
 .animate-fade-in {
