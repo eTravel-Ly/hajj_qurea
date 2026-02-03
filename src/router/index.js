@@ -4,6 +4,7 @@ import Login from '../views/Login.vue';
 import Dashboard from '../views/Dashboard.vue';
 import Qurea from '../views/Qurea.vue';
 import info from '../views/info.vue';
+import RoleIndicator from '../views/RoleIndicator.vue';
 
 // Secret key - you can move this to environment variable
 const VALID_ROUTE_KEY = import.meta.env.VITE_ROUTE_KEY || '72054865-9308-4095-9950-323c22221980';
@@ -46,6 +47,12 @@ const routes = [
         name: 'Countdown',
         component: () => import('../views/Countdown.vue'), // Lazy load
         meta: { requiresKey: false, requiresAuth: true }
+    },
+    {
+        path: '/role-indicator',
+        name: 'RoleIndicator',
+        component: RoleIndicator,
+        meta: { requiresKey: false, requiresAuth: true }
     }
 ];
 
@@ -55,7 +62,7 @@ const router = createRouter({
 });
 
 import { COUNTDOWN_TARGET_DATE } from '../constants';
-const COUNTDOWN_DATE = new Date("2026-02-03T19:40:00+02:00");
+const COUNTDOWN_DATE = new Date("2026-02-03T20:05:00+02:00");
 
 router.beforeEach((to, from, next) => {
     // 1. Check for key requirement (Public/Private check)

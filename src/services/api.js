@@ -57,5 +57,18 @@ export default {
 
     getIndicatorsStation() {
         return apiClient.get('/admin/QureaElectronicsIndicators/Station')
+    },
+
+    postkey(data) {
+        return apiClient.post('/admin/QureaElectronicsIndicators/QureaTokenKeys', data)
+    },
+    getkey() {
+        return apiClient.get('/admin/QureaElectronicsIndicators/QureaTokenKeys')
+    },
+    getTime() {
+        return apiClient.get('/admin/QureaElectronics/datetime')
+    },
+    getTimeindicators() {
+        return apiClient.get('/admin/QureaElectronicsIndicators/datetime')
     }
 }

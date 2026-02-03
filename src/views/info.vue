@@ -40,9 +40,46 @@
             <div class="text-[10px] lg:text-xs xl:text-sm 3xl:text-base text-secondary font-bold">الإحصائيات</div>
         </div>
         
-        <button @click="handleLogout" class="p-1.5 sm:p-2 lg:p-3 3xl:p-4 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
-          <img src="/logout-02.png" alt="Logout" class="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 xl:h-7 xl:w-7 3xl:h-8 3xl:w-8" />
-        </button>
+        <div class="flex items-center gap-2">
+          <!-- Key Preview Button -->
+          <div v-if="hasIndicatorRole" class="relative">
+            <button 
+              @mouseenter="fetchCurrentKey"
+              @mouseleave="showKeyPopover = false"
+              class="p-1.5 sm:p-2 lg:p-3 3xl:p-4 hover:bg-yellow-50 text-gray-400 hover:text-yellow-600 rounded-lg transition-colors border border-transparent hover:border-yellow-200"
+              title="مفتاح التقريع الحالي"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 xl:h-7 xl:w-7 3xl:h-8 3xl:w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+              </svg>
+            </button>
+            
+            <!-- Key Popover -->
+            <transition name="fade">
+              <div 
+                v-if="showKeyPopover" 
+                class="absolute left-0 top-full mt-2 w-64 bg-white rounded-xl shadow-2xl border border-gray-100 p-4 z-[100] transform origin-top-left"
+              >
+                <div class="flex flex-col gap-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs text-gray-400 font-medium text-right w-full">مفتاح التقريع الحالي</span>
+                    <div v-if="isFetchingKey" class="w-3 h-3 border-2 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+                  </div>
+                  <div v-if="currentKey" class="bg-gray-50 p-3 rounded-lg border border-gray-100 break-all text-center">
+                    <code class="text-sm font-bold text-primary">{{ currentKey.code }}</code>
+                  </div>
+                  <div v-else-if="!isFetchingKey" class="text-xs text-red-500 text-center py-2">
+                    لم يتم العثور على مفتاح فعال
+                  </div>
+                </div>
+              </div>
+            </transition>
+          </div>
+
+          <button @click="handleLogout" class="p-1.5 sm:p-2 lg:p-3 3xl:p-4 hover:bg-red-50 text-gray-400 hover:text-red-500 rounded-lg transition-colors" title="تسجيل الخروج">
+            <img src="/logout-02.png" alt="Logout" class="h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 xl:h-7 xl:w-7 3xl:h-8 3xl:w-8" />
+          </button>
+        </div>
       </header>
 
       <!-- Main Content -->
@@ -75,6 +112,16 @@
               <div class="flex justify-between items-center h-auto sm:h-[28px] 3xl:h-[32px]">
                  <h2 class="text-xs sm:text-sm lg:text-base xl:text-lg 3xl:text-xl font-semibold text-[#2B3032]">ملخص</h2>
                  <div class="flex gap-1.5 sm:gap-2 3xl:gap-3">
+                    <button 
+                       v-if="hasIndicatorRole"
+                       @click="goToCountdown" 
+                       class="flex items-center gap-2 px-2 sm:px-3 3xl:px-4 py-1 3xl:py-1.5 rounded-lg text-[10px] sm:text-xs lg:text-sm 3xl:text-base border border-[#03AA77] text-[#03AA77] hover:bg-[#03AA77]/10 transition-all font-bold"
+                    >
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                       </svg>
+                       <span>بدء القرعة</span>
+                    </button>
                     <button 
                        @click="viewMode = 'all'" 
                        class="flex items-center gap-1 px-2 sm:px-3 3xl:px-4 py-1 3xl:py-1.5 rounded-lg text-[10px] sm:text-xs lg:text-sm 3xl:text-base transition-all"
@@ -251,7 +298,7 @@
 <script>
 import VueApexCharts from "vue3-apexcharts";
 import api from "../services/api";
-import { logout } from "../services/auth";
+import { logout, parseJwt } from "../services/auth";
 
 export default {    
     name: 'info',
@@ -267,6 +314,10 @@ export default {
             error: null,
             showErrorNotify: false,
             isExporting: false,
+            // Key Preview Data
+            showKeyPopover: false,
+            currentKey: null,
+            isFetchingKey: false,
             // Indicators data
             indicators: {
               officesNotStartedCount: 0,
@@ -392,6 +443,12 @@ export default {
         }
     },
     computed: {
+      hasIndicatorRole() {
+        const token = localStorage.getItem('app-token');
+        if (!token) return false;
+        const decoded = parseJwt(token);
+        return decoded?.realm_access?.roles?.includes('qurea-role-indicators') || false;
+      },
       chartSize() {
         // Return responsive chart size based on screen width
         if (typeof window !== 'undefined') {
@@ -504,6 +561,30 @@ export default {
             this.viewMode = 'station';
             if (Object.keys(this.stationData).length === 0) {
                 await this.fetchStationData();
+            }
+        },
+        goToCountdown() {
+            this.$router.push('/countdown');
+        },
+        async fetchCurrentKey() {
+            this.showKeyPopover = true;
+            if (this.currentKey) return;
+            
+            this.isFetchingKey = true;
+            try {
+                const response = await api.getkey();
+                
+                // Be robust: check if keys are in data directly or in data.object
+                const keys = Array.isArray(response.data) 
+                    ? response.data 
+                    : (response.data?.object || []);
+
+                // Find the key where isCurrent (or IsCurrent) is true
+                this.currentKey = keys.find(k => k.isCurrent === true || k.IsCurrent === true);
+            } catch (err) {
+                console.error("Failed to fetch key:", err);
+            } finally {
+                this.isFetchingKey = false;
             }
         },
         async fetchStationData() {

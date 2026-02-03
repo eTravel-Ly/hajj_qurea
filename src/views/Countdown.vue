@@ -129,8 +129,7 @@ const route = useRoute();
 
 // Target Date: 07-02-2026 10:00 AM Tripoli Time
 // Format: YYYY-MM-DDTHH:mm:ss+Offset
-const TARGET_DATE_STR = "2026-02-03T19:40:00+02:00"; 
-const API_URL = "/proxy-time/api/v1/time/current/zone?timezone=Africa%2FTripoli";
+const TARGET_DATE_STR = "2026-02-03T20:05:00+02:00"; 
 
 const targetDate = new Date(TARGET_DATE_STR);
 const days = ref(0);
@@ -162,13 +161,20 @@ const hasIndicatorRole = computed(() => {
 
 const fetchServerTime = async () => {
     try {
-        const response = await fetch(API_URL);
-        if (!response.ok) throw new Error('Failed to fetch time');
-        const data = await response.json();
+        let response;
+        if (hasIndicatorRole.value) {
+            response = await api.getTimeindicators();
+        } else {
+            response = await api.getTime();
+        }
         
-        // Construct date object from API response
-        // data.date_time example: "2026-02-02T17:36:55.709584+02:00"
-        const serverTime = new Date(data.date_time);
+        // Handle object or string directly in object property
+        const rawData = response.data?.object;
+        const timeStr = typeof rawData === 'string' ? rawData : rawData?.datetime;
+        
+        if (!timeStr) throw new Error('Invalid time data structure');
+        
+        const serverTime = new Date(timeStr);
         const localTime = new Date();
         timeOffset = serverTime - localTime;
         
@@ -176,13 +182,15 @@ const fetchServerTime = async () => {
         startTimer();
     } catch (error) {
         console.error("Error fetching time from API, falling back to local time:", error);
-        // Fallback: assume local time is correct enough or just proceed
         isLoading.value = false;
         startTimer();
     }
 };
 
-const updateTimer = () => {
+let isCheckingKey = false;
+let keyVerified = false;
+
+const updateTimer = async () => {
   // Current time = Local time + Calculated Offset
   const now = new Date(Date.now() + timeOffset);
   const diff = targetDate - now;
@@ -196,6 +204,30 @@ const updateTimer = () => {
     isWaiting.value = true;
     startStatusPolling();
     return;
+  }
+
+  // Role-based redirection: indicators must activate first if timer is still ON
+  if (hasIndicatorRole.value && !expired.value && !keyVerified && !isCheckingKey) {
+    isCheckingKey = true;
+    try {
+        const response = await api.getkey();
+        const keys = Array.isArray(response.data) ? response.data : (response.data?.object || []);
+        const hasActiveKey = keys.some(k => k.isCurrent === true || k.IsCurrent === true);
+        
+        if (hasActiveKey) {
+            keyVerified = true;
+            // Stay on page
+        } else {
+            router.push('/role-indicator');
+            return;
+        }
+    } catch (err) {
+        console.error('Failed to check key status in countdown:', err);
+        router.push('/role-indicator');
+        return;
+    } finally {
+        isCheckingKey = false;
+    }
   }
 
   days.value = Math.floor(diff / (1000 * 60 * 60 * 24));

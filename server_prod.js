@@ -45,18 +45,6 @@ app.use('/proxy-api', createProxyMiddleware({
     xfwd: true,
 }));
 
-// Proxy for Time API
-app.use('/proxy-time', createProxyMiddleware({
-    target: 'https://timeapi.io',
-    changeOrigin: true,
-    pathRewrite: {
-        '^/proxy-time': '',
-    },
-    onProxyRes: function (proxyRes, req, res) {
-        proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-    }
-}));
-
 // Serve static files from dist
 const distPath = path.join(__dirname, 'dist');
 app.use(express.static(distPath));

@@ -148,8 +148,21 @@ const isCoordinationCompleted = (coordinationId) => {
 };
 
 const confirmButtonText = computed(() => {
-  if (!selectedCoordinationId.value) return 'بدء القرعة';
-  return isCoordinationCompleted(selectedCoordinationId.value) ? 'عرض القرعه' : 'بدأ القرعة';
+  if (!selectedCoordinationId.value) return 'اختيار مركز';
+  
+  if (isCoordinationCompleted(selectedCoordinationId.value)) {
+    return 'عرض القرعه';
+  }
+  
+  // Count offices with status 3 for the selected coordination
+  const coordinationOffices = props.offices.filter(o => o.coordinationId === selectedCoordinationId.value);
+  const completedCount = coordinationOffices.filter(o => o.status === 3).length;
+  
+  if (completedCount === 0) {
+    return 'اختيار مركز';
+  }
+  
+  return 'بدء القرعة';
 });
 
 const selectedCoordinationName = computed(() => {

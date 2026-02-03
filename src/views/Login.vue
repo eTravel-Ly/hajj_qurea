@@ -114,10 +114,21 @@ const handleLogin = async () => {
       
       // Role-based redirection logic
       if (hasIndicatorRole) {
-        if (!qureaStartedResult) {
-          router.push('/countdown');
-        } else {
-          router.push('/info');
+        try {
+          // Check if already activated on the backend
+          const keyResponse = await api.getkey();
+          const keys = Array.isArray(keyResponse.data) ? keyResponse.data : (keyResponse.data?.object || []);
+          const hasActiveKey = keys.some(k => k.isCurrent === true || k.IsCurrent === true);
+
+          if (hasActiveKey) {
+            router.push('/info');
+          } else {
+            router.push('/role-indicator');
+          }
+        } catch (err) {
+          console.error('Failed to check key status at login:', err);
+          // Fallback to role-indicator page
+          router.push('/role-indicator');
         }
         return;
       }

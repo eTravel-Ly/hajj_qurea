@@ -497,7 +497,7 @@
       :initialCoordinationId="selectedCenterId"
       :exportingId="exportingCoordinationId"
       @confirm="handleOfficeSelectionConfirm"
-      @cancel="handleLogout"
+      @cancel="showOfficeSelector = false"
       @export-all="handleExportAllCoordinationPDFs"
     />
   </div>
@@ -967,7 +967,7 @@ const lotteryButtonText = computed(() => {
   
   // If the office is already finished or the coordination is all done, show "عرض القرعه"
   if (isFinished || isCurrentCoordinationComplete.value) {
-    return 'عرض القرعه';
+    return 'تم عرض نتائج القرعة';
   }
 
   if (winnersQueue.value.length === 0) {
