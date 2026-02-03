@@ -129,7 +129,7 @@ const route = useRoute();
 
 // Target Date: 07-02-2026 10:00 AM Tripoli Time
 // Format: YYYY-MM-DDTHH:mm:ss+Offset
-const TARGET_DATE_STR = "2026-02-02T18:54:00+02:00"; 
+const TARGET_DATE_STR = "2026-02-03T19:40:00+02:00"; 
 const API_URL = "/proxy-time/api/v1/time/current/zone?timezone=Africa%2FTripoli";
 
 const targetDate = new Date(TARGET_DATE_STR);
