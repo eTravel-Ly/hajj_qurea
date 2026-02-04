@@ -49,7 +49,7 @@ const routes = [
         meta: { requiresKey: false, requiresAuth: true }
     },
     {
-        path: '/role-indicator',
+        path: '/key',
         name: 'RoleIndicator',
         component: RoleIndicator,
         meta: { requiresKey: false, requiresAuth: true }
@@ -85,7 +85,36 @@ router.beforeEach(async (to, from, next) => {
         return next('/login');
     }
 
-    // 3. Countdown blocked routing & Server Status Check
+    // 3. Strict Key Enforcement for Indicators
+    const token = localStorage.getItem('app-token');
+    let hasIndicatorRole = false;
+    if (token) {
+        const decoded = parseJwt(token);
+        hasIndicatorRole = decoded?.realm_access?.roles?.includes('qurea-role-indicators');
+    }
+
+    if (hasIndicatorRole && !isLotteryConfirmedStarted) { // Only check if not already passed global gate, though safe to check always
+        // Allow access to login/logout/RoleIndicator
+        if (to.name !== 'Login' && to.name !== 'login' && to.name !== 'RoleIndicator') {
+            // Check if key is already known to be good (we can use a separate cache var or just re-check)
+            // Ideally we cache "isKeyConfirmed"
+            // For safety, let's verify if not cached
+            try {
+                const keyResponse = await api.getkey();
+                const keys = Array.isArray(keyResponse.data) ? keyResponse.data : (keyResponse.data?.object || []);
+                const hasActiveKey = keys.some(k => k.isCurrent === true || k.IsCurrent === true);
+
+                if (!hasActiveKey) {
+                    return next({ name: 'RoleIndicator' });
+                }
+            } catch (err) {
+                console.error("Key check failed:", err);
+                return next({ name: 'RoleIndicator' });
+            }
+        }
+    }
+
+    // 4. Countdown blocked routing & Server Status Check
     // First, check local time
     const now = new Date();
     if (now < COUNTDOWN_DATE) {
@@ -102,14 +131,7 @@ router.beforeEach(async (to, from, next) => {
             }
 
             try {
-                // Determine which status endpoint to check based on role
-                const token = localStorage.getItem('app-token');
-                let hasIndicatorRole = false;
-                if (token) {
-                    const decoded = parseJwt(token);
-                    hasIndicatorRole = decoded?.realm_access?.roles?.includes('qurea-role-indicators');
-                }
-
+                // We already decoded token above
                 let response;
                 if (hasIndicatorRole) {
                     response = await api.getQureaStatusindicators();

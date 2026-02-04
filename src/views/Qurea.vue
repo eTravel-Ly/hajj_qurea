@@ -169,40 +169,88 @@
 
         <!-- Center Content -->
         <div class="flex-grow flex flex-col overflow-y-auto p-6 relative min-h-0">
-          <!-- Current Office Card - Top Left -->
-          <div v-if="currentOffice" class="absolute top-6 left-6 z-10 w-40 bg-white rounded-xl border-2 border-[#D8A663] p-2 shadow-lg">
-            <h4 class="font-bold text-sm text-gray-800 mb-2">{{ currentOffice.name }}</h4>
-            <div class="space-y-1.5">
-              <!-- <div class="flex items-center gap-1.5">
-                <p class="text-[10px] text-gray-500">الحصة الإجمالية:</p>
-                <p class="text-sm font-bold text-gray-800">{{ currentOffice.quota }} حاج</p>
-              </div> -->
-              <!-- <div class="flex items-center gap-1.5">
-                <p class="text-[10px] text-gray-500">تم إختيار:</p>
-                <p class="text-sm font-bold text-gray-800">{{ currentOffice.selectedCount || 0 }} حاج</p>
-              </div> -->
-              <div class="flex flex-col gap-1.5 mt-2">
-                <span class="text-xs text-gray-500">الحالة:</span>
+          <!-- Stats Dropdown - Moved to Left Top -->
+          <div class="absolute left-4 top-2 2xl:left-6 2xl:top-6 z-[100]" v-click-outside="() => showStatsDropdown = false">
+             <button 
+                 @click.stop="showStatsDropdown = !showStatsDropdown"
+                 class="flex items-center gap-1.5 2xl:gap-2 bg-white px-2 py-1 2xl:px-5 2xl:py-3 rounded-lg border border-[#D8A663] shadow-sm hover:bg-gray-50 transition-colors"
+             >
+                 <div class="flex flex-col items-end gap-0.5 2xl:gap-1">
+                     <span class="text-[8px] 2xl:text-sm text-gray-500 font-bold">نسبة اكتمال القرعة</span>
+                     <span class="text-[9px] 2xl:text-lg font-bold font-mono" :class="overallProgress === 100 ? 'text-green-600' : 'text-[#D8A663]'">
+                        {{ overallProgress }}%
+                    </span>
+                    <!-- Mini Progress Bar -->
+                    <div class="w-16 2xl:w-48 h-1 2xl:h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div 
+                            class="h-full rounded-full transition-all duration-500"
+                            :class="overallProgress === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
+                            :style="{ width: overallProgress + '%' }"
+                        ></div>
+                    </div>
+                 </div>
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 2xl:h-6 2xl:w-6 text-gray-400 transition-transform duration-200" :class="{'rotate-180': showStatsDropdown}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                 </svg>
+             </button>
+
+             <!-- Dropdown -->
+             <div 
+                 v-if="showStatsDropdown"
+                 class="absolute top-full left-0 mt-1 2xl:mt-2 w-56 2xl:w-96 bg-white rounded-xl shadow-xl border border-gray-100 p-2 2xl:p-4 z-[100] animate-fade-in origin-top-left"
+             >
+                 <!-- Arrow -->
+                 <div class="absolute -top-1.5 left-6 w-3 h-3 bg-white border-l border-t border-gray-100 transform rotate-45"></div>
+
+                 <div class="flex justify-between items-center mb-1 2xl:mb-3 border-b border-gray-50 pb-1 2xl:pb-2">
+                     <h4 class="text-[9px] 2xl:text-base font-bold text-gray-400">تفاصيل التنسيقيات</h4>
+                 </div>
+                 
+                 <div class="space-y-1 2xl:space-y-3 max-h-[150px] 2xl:max-h-[500px] overflow-y-auto scrollbar-hide">
+                     <div v-for="stat in coordinationStats" :key="stat.id" class="flex flex-col gap-0.5 2xl:gap-1">
+                         <div class="flex justify-between items-center text-[9px] 2xl:text-base">
+                             <span class="font-bold text-gray-700 truncate max-w-[90px] 2xl:max-w-[200px]" :title="stat.name">{{ stat.name }}</span>
+                             <span class="font-mono font-bold" :class="stat.percentage === 100 ? 'text-green-600' : 'text-gray-500'">
+                                 {{ stat.percentage }}%
+                             </span>
+                         </div>
+                         <div class="w-full h-1 2xl:h-2.5 bg-gray-50 rounded-full overflow-hidden">
+                             <div 
+                                 class="h-full rounded-full transition-all duration-500"
+                                 :class="stat.percentage === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
+                                 :style="{ width: stat.percentage + '%' }"
+                             ></div>
+                         </div>
+                     </div>
+                 </div>
+             </div>
+         </div>
+
+          <!-- Current Office Card - Top Left (Pushed Down) -->
+          <div v-if="currentOffice" class="absolute top-16 2xl:top-32 left-4 2xl:left-6 z-10 w-28 2xl:w-40 bg-white rounded-lg 2xl:rounded-xl border border-gray-200 2xl:border-2 border-[#D8A663] p-1 2xl:p-2 shadow-sm 2xl:shadow-lg">
+            <h4 class="font-bold text-[10px] 2xl:text-sm text-gray-800 mb-0.5 2xl:mb-2 truncate" :title="currentOffice.name">{{ currentOffice.name }}</h4>
+            <div class="space-y-0.5 2xl:space-y-1.5">
+              <div class="flex flex-col gap-0.5 2xl:gap-1.5 mt-0.5 2xl:mt-2">
+                <span class="text-[9px] 2xl:text-xs text-gray-500">الحالة:</span>
                 <!-- Progress bar when lottery is running -->
                 <div v-if="isLotteryRunning" class="w-full">
-                  <div class="w-full bg-gray-300 rounded-full h-2 overflow-hidden">
+                  <div class="w-full bg-gray-300 rounded-full h-1.5 2xl:h-2 overflow-hidden">
                     <div 
                       class="h-full transition-all duration-300 ease-out rounded-full"
                       :style="{ width: lotteryProgressPercentage + '%', backgroundColor: '#005045' }"
                     ></div>
                   </div>
                   <div class="flex justify-between items-center mt-0.5">
-                    <span class="text-[10px] font-bold" style="color: #005045">{{ lotteryProgressPercentage }}%</span>
-                    <!-- <span class="text-[10px] text-gray-500">{{ currentWinnerIndex + 1 }} / {{ winnersQueue.length }}</span> -->
+                    <span class="text-[8px] 2xl:text-[10px] font-bold" style="color: #005045">{{ lotteryProgressPercentage }}%</span>
                   </div>
                 </div>
                 <!-- Normal status when lottery is not running -->
-                <div v-else class="flex items-center gap-2">
+                <div v-else class="flex items-center gap-1 2xl:gap-2">
                   <span 
-                    class="w-2 h-2 rounded-full"
+                    class="w-1.5 h-1.5 2xl:w-2 2xl:h-2 rounded-full"
                     :class="getStatusDotColor(currentOffice.status)"
                   ></span>  
-                  <span class="text-xs font-bold" :class="getStatusTextColor(currentOffice.status)">
+                  <span class="text-[9px] 2xl:text-xs font-bold" :class="getStatusTextColor(currentOffice.status)">
                     {{ getStatusText(currentOffice.status) }}
                   </span>
                 </div>
@@ -214,68 +262,13 @@
           <div class="relative flex items-center justify-center mb-3 mt-[15px] px-6">
             <h1 class="text-xl 2xl:text-4xl font-bold text-gray-800">قرعة الحج لموسم 1447 هجري - 2026 ميلادي</h1>
             
-            <!-- Stats Dropdown - Right of Title -->
-             <div class="absolute right-6 2xl:right-12 top-1/2 -translate-y-1/2 z-[100]" v-click-outside="() => showStatsDropdown = false">
-                <button 
-                    @click.stop="showStatsDropdown = !showStatsDropdown"
-                    class="flex items-center gap-2 bg-white px-3 py-1.5 2xl:px-5 2xl:py-3 rounded-lg border border-[#D8A663] shadow-sm hover:bg-gray-50 transition-colors"
-                >
-                    <div class="flex flex-col items-end gap-1">
-                        <span class="text-[10px] 2xl:text-sm text-gray-500 font-bold">نسبة اكتمال القرعة</span>
-                        <span class="text-xs 2xl:text-lg font-bold font-mono" :class="overallProgress === 100 ? 'text-green-600' : 'text-[#D8A663]'">
-                           {{ overallProgress }}%
-                       </span>
-                       <!-- Mini Progress Bar -->
-                       <div class="w-20 2xl:w-48 h-1 2xl:h-2 bg-gray-100 rounded-full overflow-hidden">
-                           <div 
-                               class="h-full rounded-full transition-all duration-500"
-                               :class="overallProgress === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
-                               :style="{ width: overallProgress + '%' }"
-                           ></div>
-                       </div>
-                    </div>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 2xl:h-6 2xl:w-6 text-gray-400 transition-transform duration-200" :class="{'rotate-180': showStatsDropdown}" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                    </svg>
-                </button>
-
-                <!-- Dropdown -->
-                <div 
-                    v-if="showStatsDropdown"
-                    class="absolute top-full right-0 mt-2 w-72 2xl:w-96 bg-white rounded-xl shadow-xl border border-gray-100 p-4 z-[100] animate-fade-in origin-top-right"
-                >
-                    <!-- Arrow -->
-                    <div class="absolute -top-1.5 right-6 w-3 h-3 bg-white border-l border-t border-gray-100 transform rotate-45"></div>
-
-                    <div class="flex justify-between items-center mb-3 border-b border-gray-50 pb-2">
-                        <h4 class="text-xs 2xl:text-base font-bold text-gray-400">تفاصيل التنسيقيات</h4>
-                    </div>
-                    
-                    <div class="space-y-3 max-h-[300px] 2xl:max-h-[500px] overflow-y-auto scrollbar-hide">
-                        <div v-for="stat in coordinationStats" :key="stat.id" class="flex flex-col gap-1">
-                            <div class="flex justify-between items-center text-xs 2xl:text-base">
-                                <span class="font-bold text-gray-700 truncate max-w-[140px] 2xl:max-w-[200px]" :title="stat.name">{{ stat.name }}</span>
-                                <span class="font-mono font-bold" :class="stat.percentage === 100 ? 'text-green-600' : 'text-gray-500'">
-                                    {{ stat.percentage }}%
-                                </span>
-                            </div>
-                            <div class="w-full h-1.5 2xl:h-2.5 bg-gray-50 rounded-full overflow-hidden">
-                                <div 
-                                    class="h-full rounded-full transition-all duration-500"
-                                    :class="stat.percentage === 100 ? 'bg-green-500' : 'bg-[#D8A663]'"
-                                    :style="{ width: stat.percentage + '%' }"
-                                ></div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <!-- Stats Dropdown - Removed -->
           </div>
 
           <!-- Side-by-Side Layout: Names Card and Number Card -->
           <div class="flex-grow flex flex-col md:flex-row items-center justify-center gap-8 lg:gap-12 mb-3 px-6">
             <!-- Winners List -->
-            <div class="winners-list-wrapper w-[420px] md:w-[750px] h-[400px]">
+            <div class="winners-list-wrapper w-[420px] lg:w-[600px] 2xl:w-[750px] h-[400px]">
               <div class="bg-white rounded-xl p-6 h-full flex flex-col relative">
                 <!-- Corner Ornaments -->
                 <span class="corner-ornament corner-tl"></span>

@@ -271,7 +271,7 @@
                   <h3 class="text-base sm:text-lg md:text-xl lg:text-2xl 3xl:text-3xl text-[#2B3032] font-bold text-center leading-tight w-full">{{ station }}</h3>
 
                   <!-- Donut Chart -->
-                  <div class="flex-grow flex items-center justify-start w-full px-4 3xl:px [40px] laptop-chart-padding">
+                  <div class="flex-grow flex items-center justify-center 2xl:justify-end w-full px-[40px] 2xl:px-[40px] laptop-chart-padding">
                       <div class="w-[140px] h-[140px] sm:w-[160px] sm:h-[160px] md:w-[180px] md:h-[180px] lg:w-[200px] lg:h-[200px] xl:w-[240px] xl:h-[240px] 2xl:w-[240px] 2xl:h-[240px] 3xl:w-[280px] 3xl:h-[280px] shrink-0">
                         <apexchart 
                           type="donut" 
@@ -494,7 +494,7 @@ export default {
           return {
             label,
             index: start + idx,
-            percentage: ((val / total) * 100).toFixed(1)
+            percentage: ((val / total) * 100).toFixed(2)
           };
         });
       },
