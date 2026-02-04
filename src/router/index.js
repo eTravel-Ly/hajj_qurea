@@ -64,7 +64,12 @@ const router = createRouter({
 import { COUNTDOWN_TARGET_DATE } from '../constants';
 const COUNTDOWN_DATE = new Date("2026-02-03T20:05:00+02:00");
 
-router.beforeEach((to, from, next) => {
+import api from '../services/api';
+import { parseJwt } from '../services/auth';
+
+let isLotteryConfirmedStarted = false;
+
+router.beforeEach(async (to, from, next) => {
     // 1. Check for key requirement (Public/Private check)
     if (to.meta.requiresKey) {
         const routeKey = to.query.key;
@@ -80,8 +85,54 @@ router.beforeEach((to, from, next) => {
         return next('/login');
     }
 
-    // 3. Default: allow navigation
-    // Note: Countdown/Qurea routing is now handled by API status check in Login.vue
+    // 3. Countdown blocked routing & Server Status Check
+    // First, check local time
+    const now = new Date();
+    if (now < COUNTDOWN_DATE) {
+        const allowedRoutes = ['Countdown', 'info', 'RoleIndicator', 'Login', 'login'];
+        if (!allowedRoutes.includes(to.name)) {
+            return next({ name: 'Countdown' });
+        }
+    } else {
+        // Date has passed, but we MUST verify if the lottery actually started on server
+        if (to.name === 'Qurea') {
+            // Optimization: if we already confirmed it started once, skip check
+            if (isLotteryConfirmedStarted) {
+                return next();
+            }
+
+            try {
+                // Determine which status endpoint to check based on role
+                const token = localStorage.getItem('app-token');
+                let hasIndicatorRole = false;
+                if (token) {
+                    const decoded = parseJwt(token);
+                    hasIndicatorRole = decoded?.realm_access?.roles?.includes('qurea-role-indicators');
+                }
+
+                let response;
+                if (hasIndicatorRole) {
+                    response = await api.getQureaStatusindicators();
+                } else {
+                    response = await api.getQureaStatus();
+                }
+
+                if (response.data?.object?.isStart === true) {
+                    isLotteryConfirmedStarted = true;
+                    return next();
+                } else {
+                    // Not started yet -> Force back to Countdown (Waiting mode)
+                    return next({ name: 'Countdown' });
+                }
+            } catch (error) {
+                console.error("Router status check failed:", error);
+                // On error, safest is to block access
+                return next({ name: 'Countdown' });
+            }
+        }
+    }
+
+    // 4. Default: allow navigation
     next();
 });
 

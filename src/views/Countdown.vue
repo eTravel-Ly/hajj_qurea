@@ -127,8 +127,6 @@ import StartCountdown from '../components/StartCountdown.vue';
 const router = useRouter();
 const route = useRoute();
 
-// Target Date: 07-02-2026 10:00 AM Tripoli Time
-// Format: YYYY-MM-DDTHH:mm:ss+Offset
 const TARGET_DATE_STR = "2026-02-03T20:05:00+02:00"; 
 
 const targetDate = new Date(TARGET_DATE_STR);
@@ -143,7 +141,8 @@ const isStartingQurea = ref(false);
 const showStartCountdown = ref(false);
 let interval = null;
 let statusPollingInterval = null;
-let timeOffset = 0; // Difference between server time and local time (server - local)
+const initialRemainingTime = ref(0); // Time remaining when we first fetched data
+const localStartTime = ref(0); // High-precision timestamp when we fetched data
 
 // Get user roles from JWT token
 const getUserRoles = () => {
@@ -175,13 +174,21 @@ const fetchServerTime = async () => {
         if (!timeStr) throw new Error('Invalid time data structure');
         
         const serverTime = new Date(timeStr);
-        const localTime = new Date();
-        timeOffset = serverTime - localTime;
+        // Calculate initial remaining time strictly based on server time
+        initialRemainingTime.value = targetDate.getTime() - serverTime.getTime();
+        // Mark the local high-precision time when we received this sync
+        localStartTime.value = performance.now();
         
         isLoading.value = false;
         startTimer();
     } catch (error) {
         console.error("Error fetching time from API, falling back to local time:", error);
+        
+        // Fallback: assume local time is correct enough (or we just accept the jump on fallback)
+        const now = new Date();
+        initialRemainingTime.value = targetDate.getTime() - now.getTime();
+        localStartTime.value = performance.now();
+
         isLoading.value = false;
         startTimer();
     }
@@ -191,9 +198,11 @@ let isCheckingKey = false;
 let keyVerified = false;
 
 const updateTimer = async () => {
-  // Current time = Local time + Calculated Offset
-  const now = new Date(Date.now() + timeOffset);
-  const diff = targetDate - now;
+  // Elapsed time since sync = current high-precision time - sync start time
+  const elapsed = performance.now() - localStartTime.value;
+  
+  // Remaining = Initial Remaining - Elapsed
+  const diff = initialRemainingTime.value - elapsed;
 
   if (diff <= 0) {
     expired.value = true;
