@@ -65,8 +65,9 @@ class PDFService {
                     { text: 'رقم', style: 'tableHeader' },
                     { text: 'رقم التسجيل', style: 'tableHeader' },
                     { text: 'اسم الحاج', style: 'tableHeader' },
-                    { text: 'الرقم الوطني/جواز', style: 'tableHeader' },
+                    { text: 'الرقم الوطني', style: 'tableHeader' },
                     { text: 'اسم المرافق', style: 'tableHeader' },
+                    { text: 'الرقم الوطني للمرافق', style: 'tableHeader', fontSize: 13 },
                     { text: 'رقم الهاتف - 1', style: 'tableHeader' },
                     { text: 'رقم الهاتف - 2', style: 'tableHeader' },
                 ]
@@ -79,6 +80,7 @@ class PDFService {
                     { text: this._getVal(winner.hajj), alignment: 'center', fontSize: 14 },
                     { text: this._getVal(winner.hajjNid || winner.companionNationalId), alignment: 'center', fontSize: 14 },
                     { text: this._getVal(winner.companionHajj), alignment: 'center', fontSize: 14 },
+                    { text: this._getVal(winner.companionHajjNid), alignment: 'center', fontSize: 14 },
                     { text: this._getVal(winner.hajjPhone || winner.companionPhone1 || winner.phone), alignment: 'center', fontSize: 14 },
                     { text: this._getVal(winner.companionHajjPhone || winner.companionPhone2), alignment: 'center', fontSize: 14 },
                 ]);
@@ -170,7 +172,7 @@ class PDFService {
                     {
                         table: {
                             headerRows: 1,
-                            widths: [50, 100, '*', 120, '*', 100, 100],
+                            widths: [40, 90, '*', 110, '*', 110, 90, 90],
                             body: tableBody
                         },
                         layout: {
@@ -257,8 +259,9 @@ class PDFService {
                         { text: 'رقم', style: 'tableHeader', fontSize: 13 },
                         { text: 'رقم التسجيل', style: 'tableHeader', fontSize: 13 },
                         { text: 'اسم الحاج', style: 'tableHeader', fontSize: 13 },
-                        { text: 'الرقم الوطني/جواز', style: 'tableHeader', fontSize: 13 },
+                        { text: 'الرقم الوطني', style: 'tableHeader', fontSize: 13 },
                         { text: 'اسم المرافق', style: 'tableHeader', fontSize: 13 },
+                        { text: 'الرقم الوطني للمرافق', style: 'tableHeader', fontSize: 13 },
                         { text: 'رقم الهاتف - 1', style: 'tableHeader', fontSize: 13 },
                         { text: 'رقم الهاتف - 2', style: 'tableHeader', fontSize: 13 },
                     ]
@@ -271,6 +274,7 @@ class PDFService {
                         { text: this._getVal(winner.hajj), alignment: 'center', fontSize: 13 },
                         { text: this._getVal(winner.hajjNid || winner.companionNationalId), alignment: 'center', fontSize: 13 },
                         { text: this._getVal(winner.companionHajj), alignment: 'center', fontSize: 13 },
+                        { text: this._getVal(winner.companionHajjNid), alignment: 'center', fontSize: 13 },
                         { text: this._getVal(winner.hajjPhone || winner.companionPhone1 || winner.phone), alignment: 'center', fontSize: 13 },
                         { text: this._getVal(winner.companionHajjPhone || winner.companionPhone2), alignment: 'center', fontSize: 13 },
                     ]);
@@ -279,7 +283,7 @@ class PDFService {
                 content.push({
                     table: {
                         headerRows: 1,
-                        widths: [50, 100, '*', 120, '*', 100, 100],
+                        widths: [40, 90, '*', 110, '*', 110, 90, 90],
                         body: tableBody
                     },
                     layout: {
