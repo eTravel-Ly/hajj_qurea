@@ -1,5 +1,19 @@
 import pdfMake from '@digicole/pdfmake-rtl/build/pdfmake';
 import pdfFonts from '@digicole/pdfmake-rtl/build/vfs_fonts';
+import { PDFDocument } from 'pdf-lib';
+
+async function mergeBuffers(buffers) {
+    const merged = await PDFDocument.create();
+
+    for (const buf of buffers) {
+        const pdf = await PDFDocument.load(buf);
+        const pages = await merged.copyPages(pdf, pdf.getPageIndices());
+        pages.forEach(p => merged.addPage(p));
+    }
+
+    return await merged.save();
+}
+
 
 try {
     const vfs = pdfFonts?.pdfMake?.vfs || pdfFonts?.vfs || pdfFonts || (pdfFonts && pdfFonts.default);
@@ -218,6 +232,14 @@ class PDFService {
      */
     async generateCombinedLotteryResultsPDF(coordinationData, officesResults) {
         try {
+            const createOfficePdfBuffer = (docDefinition) => {
+                return new Promise((resolve) => {
+                    pdfMake.createPdf(docDefinition).getBuffer((buffer) => {
+                        resolve(buffer);
+                    });
+                });
+            };
+
             if (!coordinationData) throw new Error('Coordination data is required');
             if (!Array.isArray(officesResults) || officesResults.length === 0) throw new Error('No results to export');
 
@@ -235,24 +257,13 @@ class PDFService {
             const now = new Date();
             const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}`;
-
             const regionText = this._fixRTLParentheses(coordinationData.name || 'غير محدد');
 
-            const content = [];
+            const buffers = [];
 
-            officesResults.forEach((result, idx) => {
+            for (const result of officesResults) {
                 const { office, winners } = result;
                 const officeName = this._fixRTLParentheses(office.name || 'غير محدد');
-
-                content.push({
-                    text: `المكتب: ${officeName}`,
-                    fontSize: 18,
-                    bold: true,
-                    margin: [0, idx === 0 ? 0 : 40, 0, 15],
-                    alignment: 'center',
-                    pageBreak: idx === 0 ? null : 'before',
-                    color: '#005544'
-                });
 
                 const tableBody = [
                     [
@@ -280,120 +291,153 @@ class PDFService {
                     ]);
                 });
 
-                content.push({
-                    table: {
-                        headerRows: 1,
-                        widths: [40, 90, '*', 110, '*', 110, 90, 90],
-                        body: tableBody
-                    },
-                    layout: {
-                        hLineWidth: () => 0.5,
-                        vLineWidth: () => 0.5,
-                        hLineColor: () => '#000000',
-                        vLineColor: () => '#000000',
-                        paddingLeft: () => 3,
-                        paddingRight: () => 3,
-                        paddingTop: () => 4,
-                        paddingBottom: () => 4
-                    }
-                });
-            });
+                const docDefinition = {
+                    pageSize: 'A4',
+                    pageOrientation: 'landscape',
+                    pageMargins: [15, 145, 15, 80],
+                    supportRTL: true,
 
-            const docDefinition = {
-                pageSize: 'A4',
-                pageOrientation: 'landscape',
-                pageMargins: [15, 145, 15, 80],
-                supportRTL: true,
+                    header: (currentPage, pageCount) => {
+                        const headerContent = {
+                            margin: [35, 20, 35, 0],
+                            columns: [
+                                {
+                                    width: 180,
+                                    stack: [
+                                        { text: `التاريخ: ${dateStr}`, fontSize: 9 },
+                                        { text: `الوقت: ${timeStr}`, fontSize: 9, margin: [0, 2, 0, 0] },
+                                        { text: `صفحة ${currentPage} -من ${pageCount}`, fontSize: 9, margin: [0, 2, 0, 0] }
+                                    ],
+                                    alignment: 'left'
+                                },
+                                {
+                                    width: '*',
+                                    stack: [
+                                        { text: 'الهيئة العامة لشؤون الحج والعمرة', fontSize: 24, bold: true, alignment: 'center' },
+                                        { text: 'كشف حجاج القرعة', fontSize: 20, bold: true, margin: [0, 2, 0, 0], alignment: 'center' },
+                                        { text: `المنطقة: ${regionText}`, fontSize: 13, bold: true, margin: [0, 3, 0, 0], alignment: 'center' },
+                                        { text: `المكتب: ${officeName}`, fontSize: 16, bold: true, margin: [0, 2, 0, 0], alignment: 'center' }
+                                    ],
+                                    alignment: 'center'
+                                },
+                                {
+                                    width: 180,
+                                    alignment: 'right',
+                                    stack: []
+                                }
+                            ]
+                        };
 
-                header: (currentPage, pageCount) => {
-                    return {
-                        margin: [35, 20, 35, 0],
-                        columns: [
-                            {
-                                width: 180,
-                                stack: [
-                                    { text: `التاريخ: ${dateStr}`, fontSize: 9 },
-                                    { text: `الوقت: ${timeStr}`, fontSize: 9, margin: [0, 2, 0, 0] },
-                                    { text: `الصفحة رقم: ${currentPage} من ${pageCount}`, fontSize: 9, margin: [0, 2, 0, 0] }
-                                ],
-                                alignment: 'left'
-                            },
-                            {
-                                width: '*',
-                                stack: [
-                                    { text: 'الهيئة العامة لشؤون الحج والعمرة', fontSize: 24, bold: true, alignment: 'center' },
-                                    { text: 'كشف حجاج القرعة المجمعة', fontSize: 20, bold: true, margin: [0, 2, 0, 0], alignment: 'center' },
-                                    { text: `المنطقة: ${regionText}`, fontSize: 13, bold: true, margin: [0, 3, 0, 0], alignment: 'center' }
-                                ],
-                                alignment: 'center'
-                            },
-                            {
-                                width: 180,
-                                alignment: 'right',
-                                stack: logoSvg ? [{
-                                    svg: logoSvg,
-                                    width: 60,
-                                    height: 60,
-                                    margin: [0, 0, 0, 5],
-                                    alignment: 'right'
-                                }, { text: 'موسم 1447 هـ - 2026 م', fontSize: 11, bold: true, alignment: 'right' }] : [{ text: 'موسم 1447 هـ - 2026 م', fontSize: 11, bold: true, alignment: 'right' }]
-                            }
-                        ]
-                    };
-                },
-
-                footer: (currentPage, pageCount) => {
-                    return {
-                        margin: [20, 10, 20, 45],
-                        columns: [
-                            {
-                                width: '50%',
-                                stack: [
-                                    { text: 'الاسم:......................................', fontSize: 10 },
-                                    { text: 'الصفة:.....................................', fontSize: 10, margin: [0, 5, 0, 0] },
-                                    { text: 'التوقيع:...................................', fontSize: 10, margin: [0, 5, 0, 0] }
-                                ],
-                                alignment: 'left'
-                            },
-                            {
-                                width: '50%',
-                                stack: [
-                                    { text: 'الاسم:......................................', fontSize: 10 },
-                                    { text: `الصفة: منسق تنسيقة ${regionText}`, fontSize: 10, margin: [0, 5, 0, 0] },
-                                    { text: 'التوقيع:...................................', fontSize: 10, margin: [0, 5, 0, 0] }
-                                ],
+                        if (logoSvg) {
+                            headerContent.columns[2].stack.push({
+                                svg: logoSvg,
+                                width: 60,
+                                height: 60,
+                                margin: [0, 0, 0, 5],
                                 alignment: 'right'
-                            }
-                        ]
-                    };
-                },
+                            });
+                        }
 
-                content: content,
+                        headerContent.columns[2].stack.push(
+                            { text: 'موسم 1447 هـ - 2026 م', fontSize: 11, bold: true, alignment: 'right' },
+                            { text: regionText, fontSize: 10, margin: [0, 1, 0, 0], alignment: 'right' },
+                            { text: officeName, fontSize: 10, margin: [0, 1, 0, 0], alignment: 'right' }
+                        );
 
-                styles: {
-                    tableHeader: {
-                        bold: true,
-                        fontSize: 9,
-                        color: 'black',
-                        fillColor: '#F5F5F5',
-                        alignment: 'center'
+                        return headerContent;
+                    },
+
+                    footer: (currentPage, pageCount) => {
+                        return {
+                            margin: [20, 10, 20, 45],
+                            columns: [
+                                {
+                                    width: '50%',
+                                    stack: [
+                                        { text: 'الاسم:......................................', fontSize: 10 },
+                                        { text: 'الصفة:.....................................', fontSize: 10, margin: [0, 5, 0, 0] },
+                                        { text: 'التوقيع:...................................', fontSize: 10, margin: [0, 5, 0, 0] }
+                                    ],
+                                    alignment: 'left'
+                                },
+                                {
+                                    width: '50%',
+                                    stack: [
+                                        { text: 'الاسم:......................................', fontSize: 10 },
+                                        { text: `الصفة: منسق تنسيقة ${regionText}`, fontSize: 10, margin: [0, 5, 0, 0] },
+                                        { text: 'التوقيع:...................................', fontSize: 10, margin: [0, 5, 0, 0] }
+                                    ],
+                                    alignment: 'right'
+                                }
+                            ]
+                        };
+                    },
+
+                    content: [
+                        {
+                            columns: [
+                                { text: '', width: '*' },
+                                {
+                                    width: 'auto',
+                                    table: {
+                                        headerRows: 1,
+                                        widths: [35, 80, 130, 95, 130, 95, 75, 75],
+                                        body: tableBody
+                                    },
+                                    layout: {
+                                        hLineWidth: () => 0.5,
+                                        vLineWidth: () => 0.5,
+                                        hLineColor: () => '#000000',
+                                        vLineColor: () => '#000000',
+                                        paddingLeft: () => 3,
+                                        paddingRight: () => 3,
+                                        paddingTop: () => 4,
+                                        paddingBottom: () => 4
+                                    }
+                                },
+                                { text: '', width: '*' }
+                            ]
+                        }
+                    ],
+
+                    styles: {
+                        tableHeader: {
+                            bold: true,
+                            fontSize: 9,
+                            color: 'black',
+                            fillColor: '#F5F5F5',
+                            alignment: 'center'
+                        }
+                    },
+
+                    defaultStyle: {
+                        font: 'Nillima',
+                        fontSize: 9
                     }
-                },
+                };
 
-                defaultStyle: {
-                    font: 'Nillima',
-                    fontSize: 9
-                }
-            };
+                const buffer = await createOfficePdfBuffer(docDefinition);
+                buffers.push(buffer);
+            }
 
-            const fileName = `كشف_مجمع_تنسيقة_${coordinationData.name || 'المنطقة'}.pdf`;
-            pdfMake.createPdf(docDefinition).download(fileName);
+            const mergedBytes = await mergeBuffers(buffers);
+
+            const blob = new Blob([mergedBytes], { type: 'application/pdf' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `كشف_مجمع_تنسيقة_${coordinationData.name || 'المنطقة'}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
 
         } catch (error) {
             console.error('Error in generateCombinedLotteryResultsPDF:', error);
             throw error;
         }
     }
+
 
     // _getStatusText(status) {
     //     switch (status) {

@@ -218,6 +218,9 @@ const handleExportAllCoordinationPDFs = async (coordinationId) => {
     const coordination = coordinations.value.find(c => c.id === coordinationId);
     let exportedCount = 0;
 
+    // List to hold all winner results for combined PDF
+    const allResults = [];
+
     // Process each office
     for (const office of coordinationOffices) {
       try {
@@ -225,21 +228,22 @@ const handleExportAllCoordinationPDFs = async (coordinationId) => {
         const res = await api.getOfficeWinners(office.id);
         const winners = res.data?.object || [];
         
-        // Only generate PDF if we actually have winners
+        // Only collect if we actually have winners
         if (Array.isArray(winners) && winners.length > 0) {
-          await pdfService.generateLotteryResultsPDF(
-             office,
-             winners,
-             coordination
-          );
+          allResults.push({
+            office: office,
+            winners: winners
+          });
           exportedCount++;
-          
-          // Add a small delay between downloads to prevent browser blocking
-          await new Promise(resolve => setTimeout(resolve, 800));
         }
       } catch (e) {
-        console.error(`Error exporting office ${office.name}:`, e);
+        console.error(`Error fetching office ${office.name}:`, e);
       }
+    }
+
+    // Generate combined PDF if any results found
+    if (allResults.length > 0) {
+      await pdfService.generateCombinedLotteryResultsPDF(coordination, allResults);
     }
     
     if (exportedCount === 0) {
