@@ -33,7 +33,7 @@ app.use('/proxy-auth', createProxyMiddleware({
 // Proxy for API
 // Vite config: /proxy-api -> https://hajjaj.hajj.gov.ly
 app.use('/proxy-api', createProxyMiddleware({
-    target: 'https://hajjaj.hajj.gov.ly',
+    target: 'https://pss.hajj.gov.ly',
     changeOrigin: true,
     pathRewrite: {
         '^/proxy-api': '', // Rewrite logic from vite config

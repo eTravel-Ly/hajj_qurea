@@ -16,7 +16,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/proxy-auth/, ''),
       },
       '/proxy-api': {
-        target: 'https://hajjaj.hajj.gov.ly',
+        target: 'https://pss.hajj.gov.ly',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/proxy-api/, ''),
       },
